@@ -1,0 +1,104 @@
+/*
+ * Design tokens (design doc §1). Every color is defined once as light-dark(light, dark); the theme
+ * follows the OS unless <html data-theme="light|dark"> pins it. dev/contrast.mjs checks the pairs.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* surfaces */
+  --bg: light-dark(#f7f8fa, #111827);
+  --surface: light-dark(#ffffff, #1f2937);
+  --surface-2: light-dark(#f4f5f9, #243042);
+  --sunken: light-dark(#eef0f5, #172030);
+
+  /* text */
+  --text: light-dark(#18243a, #e5e7eb);
+  --text-2: light-dark(#3f4b61, #c5cbd5);
+  --muted: light-dark(#5d687d, #a0a9b8);
+
+  /* lines */
+  --border: light-dark(#e3e6ed, #2f3b4e);
+  --border-strong: light-dark(#7f889b, #6b778d);
+  --grid-line: light-dark(#e9ebf0, #2a3546);
+
+  /* accent: indigo (light) and the doc's violet (dark) for filled buttons, whose text label
+     identifies them. Progress fills and indicators use --chart-accent, which clears 3:1 in both themes. */
+  --accent: light-dark(#6558d3, #7c3aed);
+  --accent-hover: light-dark(#5747c9, #6d2edb);
+  --accent-active: light-dark(#4b3db5, #5f25c4);
+  --on-accent: light-dark(#ffffff, #ffffff);
+  --accent-text: light-dark(#5345c6, #b9aeff);
+  --accent-soft: light-dark(#eeecfb, #2b2858);
+  --accent-soft-text: light-dark(#4637b8, #cfc7ff);
+  --focus-ring: light-dark(#6558d3, #a89bff);
+
+  /* status (always paired with an icon and a word) */
+  --success-icon: light-dark(#16a34a, #34d399);
+  --success-text: light-dark(#157041, #6ee7b7);
+  --success-soft: light-dark(#e7f6ee, #163a2f);
+  --warning-icon: light-dark(#b26b00, #fbbf24);
+  --warning-text: light-dark(#8a4b06, #fcd34d);
+  --warning-soft: light-dark(#fdf3df, #3a2f18);
+  --danger-icon: light-dark(#dc2626, #f87171);
+  --danger-text: light-dark(#b42318, #fca5a5);
+  --danger-soft: light-dark(#fdecec, #3d2024);
+
+  /* difficulty (always shown with its letter and name) */
+  --diff-f: light-dark(#0e6e8c, #67d3ef);
+  --diff-f-soft: light-dark(#e5f4f8, #133445);
+  --diff-c: light-dark(#5345c6, #c3b9ff);
+  --diff-c-soft: light-dark(#eeecfb, #2b2858);
+  --diff-ch: light-dark(#9a1f9e, #f0a6f3);
+  --diff-ch-soft: light-dark(#fbeafb, #3a1e3d);
+
+  /* charts (validated with the dataviz palette checker; labels carry identity) */
+  --chart-got: light-dark(#0c7352, #27a37a);
+  --chart-shaky: light-dark(#e8a10a, #c08708);
+  --chart-lost: light-dark(#f2706b, #c1403f);
+  --chart-new: light-dark(#e3e6ed, #374151);
+  --chart-accent: light-dark(#6558d3, #8b7cf6);
+
+  /* depth */
+  --shadow-color: light-dark(rgb(16 24 40 / 0.07), rgb(0 0 0 / 0.35));
+  --shadow-sm: 0 1px 2px var(--shadow-color), 0 1px 3px var(--shadow-color);
+  --shadow-md: 0 4px 12px var(--shadow-color), 0 1px 3px var(--shadow-color);
+  --shadow-lg: 0 16px 40px var(--shadow-color), 0 2px 6px var(--shadow-color);
+  --overlay: light-dark(rgb(16 24 40 / 0.45), rgb(0 0 0 / 0.6));
+
+  /* shape and space (8px grid) */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+
+  /* type */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+
+  --sidebar-w: 248px;
+  --tabbar-h: 64px;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}

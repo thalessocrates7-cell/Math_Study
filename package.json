@@ -1,0 +1,50 @@
+{
+  "name": "mth263-study",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MTH 263 Exam 4 study platform: OpenStax practice problems with hints, worked solutions and spaced review.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "vercel-build": "tsx scripts/migrate.ts && tsx scripts/seed.ts && next build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "content:check": "node dev/check-content.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "admin:hash": "tsx scripts/admin-hash.ts",
+    "e2e": "next build && playwright test",
+    "contrast": "node dev/contrast.mjs",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.15",
+    "drizzle-orm": "0.45.4",
+    "jose": "6.2.15",
+    "katex": "0.19.1",
+    "lucide-react": "1.69.0",
+    "next": "16.4.5",
+    "pg": "8.23.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.0",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.1.0"
+  }
+}

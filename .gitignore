@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# local database (PGlite) and test output
+.data/
+test-results/
+playwright-report/
+dev/checks.json
+
+# python venv for the SymPy answer checker
+dev/.venv/
+__pycache__/
+
+# env files (secrets)
+.env
+.env.*
+!.env.example
+
+# vercel
+.vercel/
+
+# misc
+.DS_Store
+*.log
