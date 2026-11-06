@@ -11,6 +11,7 @@ import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
 import { renderRich } from "@/lib/tex";
 import { workspaceData } from "@/server/practice";
+import { PageTransition } from "@/components/PageTransition";
 
 type Props = {
   params: Promise<{ problemId: string }>;
@@ -101,63 +102,65 @@ export default async function PracticePage({ params, searchParams }: Props) {
     ) : null;
 
   return (
-    <div className="page">
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <ol>
-          <li>
-            <Link href={data.reviewItem ? "/review" : "/plan"}>{data.reviewItem ? "Review Queue" : "Study Plan"}</Link>
-          </li>
-          <li>
-            <Link href={`/plan/${section.id}`}>{`${section.id} ${section.title}`}</Link>
-          </li>
-          <li aria-current="page">Practice</li>
-        </ol>
-      </nav>
-      <header className="page-header" style={{ marginBottom: 12 }}>
-        <div>
-          <h1>
-            {section.id} – {section.title}
-          </h1>
-          {data.reviewItem ? <p className="lede">{REASON[data.reviewItem.reason]}</p> : null}
-        </div>
-        <DifficultyBadge d={problem.difficulty} />
-      </header>
-      {data.position ? (
-        <div className="ws-progress">
-          <div className="spread small">
-            <span style={{ fontWeight: 600 }}>
-              Question {data.position} of {data.total}
-            </span>
-            <span className="text-2 num">{pct}% complete</span>
+    <PageTransition>
+      <div className="page">
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link href={data.reviewItem ? "/review" : "/plan"}>{data.reviewItem ? "Review Queue" : "Study Plan"}</Link>
+            </li>
+            <li>
+              <Link href={`/plan/${section.id}`}>{`${section.id} ${section.title}`}</Link>
+            </li>
+            <li aria-current="page">Practice</li>
+          </ol>
+        </nav>
+        <header className="page-header" style={{ marginBottom: 12 }}>
+          <div>
+            <h1>
+              {section.id} – {section.title}
+            </h1>
+            {data.reviewItem ? <p className="lede">{REASON[data.reviewItem.reason]}</p> : null}
           </div>
-          <ProgressBar value={data.done} max={data.total} label={`Section ${section.id} progress`} />
-        </div>
-      ) : null}
-      {!problem.active ? (
-        <div className="alert alert-warning" style={{ marginBottom: 16 }}>
-          This problem was retired by your instructor. You can still finish this review.
-        </div>
-      ) : null}
+          <DifficultyBadge d={problem.difficulty} />
+        </header>
+        {data.position ? (
+          <div className="ws-progress">
+            <div className="spread small">
+              <span style={{ fontWeight: 600 }}>
+                Question {data.position} of {data.total}
+              </span>
+              <span className="text-2 num">{pct}% complete</span>
+            </div>
+            <ProgressBar value={data.done} max={data.total} label={`Section ${section.id} progress`} />
+          </div>
+        ) : null}
+        {!problem.active ? (
+          <div className="alert alert-warning" style={{ marginBottom: 16 }}>
+            This problem was retired by your instructor. You can still finish this review.
+          </div>
+        ) : null}
 
-      <Workspace
-        key={`${problem.id}:${itemId ?? ""}`}
-        problemId={problem.id}
-        itemId={data.reviewItem?.id ?? null}
-        tag={tag}
-        statementHtml={renderRich(problem.statement)}
-        figure={problem.figure ? <FunctionPlot spec={problem.figure} /> : null}
-        hintsHtml={problem.hints.map((h) => renderRich(h))}
-        answerHtml={renderRich(problem.answer)}
-        steps={problem.steps.map((s) => ({ title: s.title, html: renderRich(s.body) }))}
-        note={data.note}
-        asideTop={asideTop}
-        asideBottom={asideBottom}
-      />
-      <p className="xsmall muted" style={{ marginTop: 24 }}>
-        {problem.openstaxNumber
-          ? `Adapted from OpenStax Calculus Volume 1, Section ${section.id}, Exercise ${problem.openstaxNumber} (CC BY-NC-SA 4.0).`
-          : `Original practice problem in the style of OpenStax Calculus Volume 1, Section ${section.id}.`}
-      </p>
-    </div>
+        <Workspace
+          key={`${problem.id}:${itemId ?? ""}`}
+          problemId={problem.id}
+          itemId={data.reviewItem?.id ?? null}
+          tag={tag}
+          statementHtml={renderRich(problem.statement)}
+          figure={problem.figure ? <FunctionPlot spec={problem.figure} /> : null}
+          hintsHtml={problem.hints.map((h) => renderRich(h))}
+          answerHtml={renderRich(problem.answer)}
+          steps={problem.steps.map((s) => ({ title: s.title, html: renderRich(s.body) }))}
+          note={data.note}
+          asideTop={asideTop}
+          asideBottom={asideBottom}
+        />
+        <p className="xsmall muted" style={{ marginTop: 24 }}>
+          {problem.openstaxNumber
+            ? `Adapted from OpenStax Calculus Volume 1, Section ${section.id}, Exercise ${problem.openstaxNumber} (CC BY-NC-SA 4.0).`
+            : `Original practice problem in the style of OpenStax Calculus Volume 1, Section ${section.id}.`}
+        </p>
+      </div>
+    </PageTransition>
   );
 }

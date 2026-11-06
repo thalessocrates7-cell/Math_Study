@@ -46,7 +46,8 @@ export function PlanBuilder({ rows }: { rows: BuilderRow[] }) {
         </div>
       ) : null}
       <div className="table-wrap">
-        <table className="table">
+        {/* On phones each row stacks (section name, then the three counts); see .plan-table in app.css. */}
+        <table className="table plan-table">
           <thead>
             <tr>
               <th scope="col">Section</th>
@@ -77,23 +78,30 @@ export function PlanBuilder({ rows }: { rows: BuilderRow[] }) {
                       <label className="sr-only" htmlFor={`${r.sectionId}:${l.d}`}>
                         {r.sectionId} {l.label} problems (up to {r.pool[l.d]})
                       </label>
+                      <span className="plan-level" aria-hidden="true">
+                        {l.label}
+                      </span>
                       <input
                         id={`${r.sectionId}:${l.d}`}
                         name={`${r.sectionId}:${l.d}`}
-                        className="input"
+                        className="input plan-count"
                         type="number"
                         min={0}
                         max={r.pool[l.d]}
                         step={1}
-                        style={{ width: 80, textAlign: "center" }}
                         value={v[l.d]}
                         onChange={(e) => setValue(r.sectionId, l.d, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
                       />
                       <div className="xsmall muted num">of {r.pool[l.d]}</div>
                     </td>
                   ))}
-                  <td className="numcol">{total}</td>
-                  <td>
+                  <td className="numcol plan-total">
+                    <span className="plan-level" aria-hidden="true">
+                      Total
+                    </span>
+                    {total}
+                  </td>
+                  <td className="plan-mix">
                     <div className="mix" aria-hidden="true">
                       {LEVELS.map((l) => (v[l.d] > 0 ? <span key={l.d} className={`mix-${l.d}`} style={{ flexGrow: v[l.d], flexBasis: 0 }} /> : null))}
                     </div>

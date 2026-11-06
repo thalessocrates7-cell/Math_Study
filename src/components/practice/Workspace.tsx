@@ -50,6 +50,8 @@ export function Workspace(props: WorkspaceProps) {
   const solutionBtn = useRef<HTMLButtonElement>(null);
   const [step, setStep] = useState(0);
   const [maxStep, setMaxStep] = useState(0);
+  // Step content eases in once the student starts moving between steps (not on first open).
+  const [stepMoved, setStepMoved] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
   const [pending, setPending] = useState<Rating | null>(null);
@@ -130,6 +132,7 @@ export function Workspace(props: WorkspaceProps) {
 
   function goStep(i: number) {
     const s = Math.max(0, Math.min(steps.length - 1, i));
+    if (s !== step) setStepMoved(true);
     setStep(s);
     setMaxStep((m) => Math.max(m, s));
   }
@@ -187,7 +190,7 @@ export function Workspace(props: WorkspaceProps) {
           <div id="hint-panel" role="region" aria-label="Hints" className="assist-panel" hidden={!hintOpen}>
             <div className="stack">
               {hintsHtml.slice(0, Math.max(1, hintsShown)).map((h, i) => (
-                <div key={i}>
+                <div key={i} className="hint-item">
                   <p className="xsmall muted" style={{ marginBottom: 4 }}>
                     Hint {i + 1} of {hintsHtml.length}
                   </p>
@@ -255,7 +258,7 @@ export function Workspace(props: WorkspaceProps) {
           <div className="confirm" role="status">
             <p>{outcome.message}</p>
             <div className="cluster">
-              <Link ref={continueRef} className="btn btn-primary" href={outcome.nextHref}>
+              <Link ref={continueRef} className="btn btn-primary" href={outcome.nextHref} transitionTypes={["nav-forward"]}>
                 {outcome.nextLabel}
                 <ArrowRight size={18} aria-hidden="true" />
               </Link>
@@ -333,10 +336,13 @@ export function Workspace(props: WorkspaceProps) {
                 ))}
               </ol>
               <div aria-live="polite">
-                <h3 className="step-title">
-                  Step {step + 1}: {steps[step]?.title}
-                </h3>
-                <Html html={steps[step]?.html ?? ""} />
+                {/* Keyed so each newly chosen step re-runs its ease-in. */}
+                <div key={step} className={stepMoved ? "step-swap" : undefined}>
+                  <h3 className="step-title">
+                    Step {step + 1}: {steps[step]?.title}
+                  </h3>
+                  <Html html={steps[step]?.html ?? ""} />
+                </div>
               </div>
             </>
           )}

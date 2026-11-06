@@ -8,10 +8,11 @@ import pg from "pg";
 import type { DB } from "../src/db/client";
 import * as schema from "../src/db/schema";
 import { seedDatabase } from "../src/db/seed";
-import { databaseUrl, loadLocalEnv } from "./env";
+import { databaseUrl, failIfVercelWithoutDatabase, loadLocalEnv } from "./env";
 
 loadLocalEnv();
 const url = databaseUrl();
+failIfVercelWithoutDatabase(url);
 if (!url) {
   console.log("DATABASE_URL is not set: skipping. (Locally the app uses PGlite, which seeds itself.)");
   process.exit(0);

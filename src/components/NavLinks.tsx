@@ -52,6 +52,8 @@ export function SidebarNav({ items, label }: { items: NavItem[]; label: string }
           return (
             <li key={item.href}>
               <Link href={item.href} className="nav-link" aria-current={on ? "page" : undefined}>
+                {/* One indicator, named for view transitions, so it glides to the new item. */}
+                {on ? <span className="nav-indicator" aria-hidden="true" /> : null}
                 <Icon size={20} aria-hidden="true" />
                 <span>{item.label}</span>
                 {item.count ? (
@@ -78,6 +80,7 @@ export function TabBar({ items, label }: { items: NavItem[]; label: string }) {
         const on = active(pathname, item);
         return (
           <Link key={item.href} href={item.href} className="tab" aria-current={on ? "page" : undefined}>
+            {on ? <span className="tab-indicator" aria-hidden="true" /> : null}
             <Icon size={22} aria-hidden="true" />
             <span>{item.short ?? item.label}</span>
             {item.count ? (

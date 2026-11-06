@@ -51,6 +51,8 @@ const pairs = [
   ["danger-icon", "surface", UI],
   ["chart-got", "surface", UI],
   ["chart-accent", "surface", UI],
+  // Active-nav marker drawn on the active item's pill.
+  ["chart-accent", "accent-soft", UI],
 ];
 
 let failures = 0;

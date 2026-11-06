@@ -40,6 +40,10 @@ async function createDb(): Promise<DB> {
     const pool = new Pool({ connectionString: url, max: 5, idleTimeoutMillis: 10_000 });
     return drizzle({ client: pool, schema });
   }
+  if (process.env.VERCEL) {
+    // Vercel's disk is read-only, so the local PGlite fallback can't work there.
+    throw new Error("DATABASE_URL is not set: connect the Neon database to this Vercel project (Storage), then redeploy.");
+  }
   const dir = process.env.PGLITE_DIR ?? path.join(process.cwd(), ".data", "pglite");
   return createPgliteDb(dir === "memory" ? null : dir);
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { setTheme } from "@/app/actions/auth";
+import { crossFade } from "@/lib/motion";
 
 type Pref = "light" | "dark" | "system";
 
@@ -28,8 +29,10 @@ export function ThemeChoice({ initial }: { initial: Pref }) {
             checked={value === o.value}
             onChange={() => {
               setValue(o.value);
-              if (o.value === "system") delete document.documentElement.dataset.theme;
-              else document.documentElement.dataset.theme = o.value;
+              crossFade(() => {
+                if (o.value === "system") delete document.documentElement.dataset.theme;
+                else document.documentElement.dataset.theme = o.value;
+              });
               startTransition(() => setTheme(o.value));
             }}
           />

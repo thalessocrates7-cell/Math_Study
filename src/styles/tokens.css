@@ -64,6 +64,8 @@
   --shadow-md: 0 4px 12px var(--shadow-color), 0 1px 3px var(--shadow-color);
   --shadow-lg: 0 16px 40px var(--shadow-color), 0 2px 6px var(--shadow-color);
   --overlay: light-dark(rgb(16 24 40 / 0.45), rgb(0 0 0 / 0.6));
+  /* edge shadow on sideways-scrolling tables (decorative, not a text pair) */
+  --scroll-shadow: light-dark(rgb(16 24 40 / 0.16), rgb(0 0 0 / 0.55));
 
   /* shape and space (8px grid) */
   --radius-sm: 8px;
@@ -93,6 +95,14 @@
   --sidebar-w: 248px;
   --tabbar-h: 64px;
   --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* motion (interaction-design tokens): things arrive gently and leave quickly; only transform and
+     opacity animate. prefers-reduced-motion is handled at the end of app.css. */
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 150ms;
+  --dur-normal: 200ms;
+  --dur-slow: 300ms;
 }
 
 :root[data-theme="light"] {

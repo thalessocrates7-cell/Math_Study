@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { currentStudent } from "@/lib/auth";
 import { readTheme } from "@/lib/session";
 import { renderInlineText } from "@/lib/tex";
+import { PageTransition } from "@/components/PageTransition";
 
 const FEATURES = [
   { icon: Layers, title: "Structured", text: "Organized by the calculus sections on Exam 4, from antiderivatives to inverse trig integrals." },
@@ -51,118 +52,120 @@ export default async function Home() {
   const primary = student ? { href: "/dashboard", label: "Go to your dashboard" } : { href: "/signin", label: "Get Started" };
 
   return (
-    <div className="site">
-      <a className="skip-link" href="#main">
-        Skip to content
-      </a>
-      <header className="site-header">
-        <div className="site-header-inner">
-          <Brand />
-          <nav className="site-nav" aria-label="Site">
-            <a href="#how">How It Works</a>
-            <a href="#topics">Topics</a>
-            {student ? null : <Link href="/signin">Sign In</Link>}
-          </nav>
-          <div className="cluster">
-            <ThemeToggle initial={theme} />
-            <Link className="btn btn-primary btn-sm" href={primary.href}>
-              {student ? "Dashboard" : "Get Started"}
-              <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main id="main">
-        <section className="site-section hero" aria-labelledby="hero-title">
-          <div>
-            <p className="kicker">MTH 263 · Exam 4 preparation</p>
-            <h1 id="hero-title">Prepare smarter. Understand calculus.</h1>
-            <p className="hero-lede">
-              A personalized study plan for Exam 4: practice OpenStax problems one at a time, get a hint or the worked solution when you
-              need it, and come back to the ones that felt shaky.
-            </p>
-            <div className="hero-actions">
-              <Link className="btn btn-primary btn-lg" href={primary.href}>
-                {primary.label}
-                <ArrowRight size={18} aria-hidden="true" />
+    <PageTransition>
+      <div className="site">
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
+        <header className="site-header">
+          <div className="site-header-inner">
+            <Brand />
+            <nav className="site-nav" aria-label="Site">
+              <a href="#how">How It Works</a>
+              <a href="#topics">Topics</a>
+              {student ? null : <Link href="/signin">Sign In</Link>}
+            </nav>
+            <div className="cluster">
+              <ThemeToggle initial={theme} />
+              <Link className="btn btn-primary btn-sm" href={primary.href}>
+                {student ? "Dashboard" : "Get Started"}
+                <ArrowRight size={16} aria-hidden="true" />
               </Link>
-              <a className="btn btn-secondary btn-lg" href="#how">
-                Explore How It Works
-              </a>
             </div>
           </div>
-          <HeroArt />
-        </section>
+        </header>
 
-        <section className="site-section" aria-labelledby="features-title">
-          <div className="section-head">
-            <h2 id="features-title">Built for one problem at a time</h2>
+        <main id="main">
+          <section className="site-section hero" aria-labelledby="hero-title">
+            <div>
+              <p className="kicker">MTH 263 · Exam 4 preparation</p>
+              <h1 id="hero-title">Prepare smarter. Understand calculus.</h1>
+              <p className="hero-lede">
+                A personalized study plan for Exam 4: practice OpenStax problems one at a time, get a hint or the worked solution when you
+                need it, and come back to the ones that felt shaky.
+              </p>
+              <div className="hero-actions">
+                <Link className="btn btn-primary btn-lg" href={primary.href}>
+                  {primary.label}
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+                <a className="btn btn-secondary btn-lg" href="#how">
+                  Explore How It Works
+                </a>
+              </div>
+            </div>
+            <HeroArt />
+          </section>
+
+          <section className="site-section" aria-labelledby="features-title">
+            <div className="section-head">
+              <h2 id="features-title">Built for one problem at a time</h2>
+            </div>
+            <ul className="grid grid-4" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {FEATURES.map((f) => (
+                <li key={f.title} className="card">
+                  <span className="feature-icon" aria-hidden="true">
+                    <f.icon size={22} />
+                  </span>
+                  <h3>{f.title}</h3>
+                  <p className="small text-2" style={{ marginTop: 6 }}>
+                    {f.text}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section id="how" className="site-section" aria-labelledby="how-title">
+            <div className="section-head">
+              <h2 id="how-title">How it works</h2>
+              <p>Three steps, repeated until the exam.</p>
+            </div>
+            <ol className="grid grid-3" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {STEPS.map((s) => (
+                <li key={s.n} className="card">
+                  <span className="step-num" aria-hidden="true">
+                    {s.n}
+                  </span>
+                  <h3 style={{ marginTop: 8 }}>{s.title}</h3>
+                  <p className="small text-2" style={{ marginTop: 6 }}>
+                    {s.text}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section id="topics" className="site-section" aria-labelledby="topics-title">
+            <div className="section-head">
+              <h2 id="topics-title">Topics covered</h2>
+              <p>The eight sections of OpenStax Calculus Volume 1 on Exam 4, in study order.</p>
+            </div>
+            <ul className="grid grid-4" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {SECTIONS.map((s) => (
+                <li key={s.id} className="topic-card">
+                  <span className="topic-num">{s.id}</span>
+                  <span className="small" style={{ fontWeight: 600 }}>
+                    {s.title}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </main>
+
+        <footer className="site-footer">
+          <div className="site-footer-inner">
+            <nav className="footer-links" aria-label="Footer">
+              <a href="#how">How It Works</a>
+              <a href="#topics">Topics</a>
+              <Link href={student ? "/dashboard" : "/signin"}>{student ? "Dashboard" : "Sign In"}</Link>
+            </nav>
+            <p>{ATTRIBUTION}</p>
+            <p>© 2026 MTH 263 Calculus Study Platform. Only your name and study progress are stored.</p>
           </div>
-          <ul className="grid grid-4" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {FEATURES.map((f) => (
-              <li key={f.title} className="card">
-                <span className="feature-icon" aria-hidden="true">
-                  <f.icon size={22} />
-                </span>
-                <h3>{f.title}</h3>
-                <p className="small text-2" style={{ marginTop: 6 }}>
-                  {f.text}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section id="how" className="site-section" aria-labelledby="how-title">
-          <div className="section-head">
-            <h2 id="how-title">How it works</h2>
-            <p>Three steps, repeated until the exam.</p>
-          </div>
-          <ol className="grid grid-3" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {STEPS.map((s) => (
-              <li key={s.n} className="card">
-                <span className="step-num" aria-hidden="true">
-                  {s.n}
-                </span>
-                <h3 style={{ marginTop: 8 }}>{s.title}</h3>
-                <p className="small text-2" style={{ marginTop: 6 }}>
-                  {s.text}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section id="topics" className="site-section" aria-labelledby="topics-title">
-          <div className="section-head">
-            <h2 id="topics-title">Topics covered</h2>
-            <p>The eight sections of OpenStax Calculus Volume 1 on Exam 4, in study order.</p>
-          </div>
-          <ul className="grid grid-4" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {SECTIONS.map((s) => (
-              <li key={s.id} className="topic-card">
-                <span className="topic-num">{s.id}</span>
-                <span className="small" style={{ fontWeight: 600 }}>
-                  {s.title}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </main>
-
-      <footer className="site-footer">
-        <div className="site-footer-inner">
-          <nav className="footer-links" aria-label="Footer">
-            <a href="#how">How It Works</a>
-            <a href="#topics">Topics</a>
-            <Link href={student ? "/dashboard" : "/signin"}>{student ? "Dashboard" : "Sign In"}</Link>
-          </nav>
-          <p>{ATTRIBUTION}</p>
-          <p>© 2026 MTH 263 Calculus Study Platform. Only your name and study progress are stored.</p>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </PageTransition>
   );
 }

@@ -213,6 +213,8 @@ textarea {
   padding: 0 var(--space-4);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  /* Stays on top of the moving content during page transitions ("motion: route transitions"). */
+  view-transition-name: app-topbar;
 }
 
 .tabbar {
@@ -225,6 +227,7 @@ textarea {
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--surface);
   border-top: 1px solid var(--border);
+  view-transition-name: app-tabbar;
 }
 
 .tab {
@@ -245,8 +248,9 @@ textarea {
   color: var(--accent-text);
 }
 
-.tab[aria-current="page"]::before {
-  content: "";
+/* Active-tab marker: a real element (not ::before) so it can carry a view-transition-name and
+   glide to the new tab when the page changes. */
+.tab-indicator {
   position: absolute;
   top: 0;
   left: 25%;
@@ -254,6 +258,7 @@ textarea {
   height: 3px;
   border-radius: 0 0 3px 3px;
   background: var(--chart-accent);
+  view-transition-name: tab-indicator;
 }
 
 .tab .badge-dot {
@@ -357,6 +362,7 @@ textarea {
 }
 
 .nav-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -367,7 +373,7 @@ textarea {
   font-weight: 550;
   text-decoration: none;
   transition-property: background-color, color;
-  transition-duration: 150ms;
+  transition-duration: var(--dur-fast);
   transition-timing-function: var(--ease);
 }
 
@@ -380,6 +386,18 @@ textarea {
   background: var(--accent-soft);
   color: var(--accent-soft-text);
   font-weight: 650;
+}
+
+/* Active-item marker (shape as well as color), named so it glides between items on navigation. */
+.nav-indicator {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--chart-accent);
+  view-transition-name: nav-indicator;
 }
 
 .nav-link svg {
@@ -440,6 +458,16 @@ textarea {
   color: var(--accent-soft-text);
   font-size: var(--text-sm);
   font-weight: 700;
+}
+
+/* The top-bar avatar is a link to Settings: no underline, a ring on hover instead. */
+a.avatar {
+  text-decoration: none;
+  transition: box-shadow var(--dur-fast) var(--ease);
+}
+
+a.avatar:hover {
+  box-shadow: 0 0 0 2px var(--border-strong);
 }
 
 .user-chip strong {
@@ -573,7 +601,7 @@ textarea {
   text-decoration: none;
   cursor: pointer;
   transition-property: background-color, border-color, color, transform, box-shadow;
-  transition-duration: 150ms;
+  transition-duration: var(--dur-fast);
   transition-timing-function: var(--ease);
   user-select: none;
 }
@@ -657,7 +685,7 @@ textarea {
   color: var(--text-2);
   cursor: pointer;
   transition-property: background-color, color;
-  transition-duration: 150ms;
+  transition-duration: var(--dur-fast);
 }
 
 .icon-btn:hover {
@@ -845,6 +873,20 @@ textarea {
   font-size: var(--text-sm);
 }
 
+/* Stat cards sit two across on phones instead of one per row (grid-4 takes over from 720px). */
+@media (max-width: 719px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .stat-grid .stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+}
+
 .tone-accent {
   background: var(--accent-soft);
   color: var(--accent-soft-text);
@@ -886,7 +928,7 @@ textarea {
   border-radius: var(--radius-sm);
   color: var(--text);
   text-decoration: none;
-  transition: background-color 150ms var(--ease);
+  transition: background-color var(--dur-fast) var(--ease);
 }
 
 .row-link:hover {
@@ -996,7 +1038,7 @@ textarea {
   background: var(--surface);
   color: var(--text);
   transition-property: border-color, box-shadow;
-  transition-duration: 150ms;
+  transition-duration: var(--dur-fast);
 }
 
 .input-wrap .input {
@@ -1191,6 +1233,23 @@ legend {
   overflow-x: auto;
 }
 
+/* Sideways-scrolling tables show an edge shadow on each side that has more columns. The two
+   "local" covers move with the content and hide each shadow once that end is reached. */
+.table-wrap,
+.table-scroll {
+  --scroll-bg: var(--surface);
+  background:
+    linear-gradient(to right, var(--scroll-bg) 40%, transparent) left / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--scroll-bg) 40%, transparent) right / 32px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--scroll-shadow), transparent) left / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--scroll-shadow), transparent) right / 12px 100% no-repeat scroll;
+  background-color: var(--scroll-bg);
+}
+
+.assist-panel .table-scroll {
+  --scroll-bg: var(--surface-2);
+}
+
 .data-table {
   border-collapse: collapse;
   font-size: var(--text-sm);
@@ -1275,6 +1334,7 @@ legend {
   background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
+  view-transition-name: site-header;
 }
 
 .site-header-inner,
@@ -1623,7 +1683,7 @@ legend {
   color: var(--text);
   text-decoration: none;
   box-shadow: var(--shadow-sm);
-  transition: border-color 150ms var(--ease);
+  transition: border-color var(--dur-fast) var(--ease);
 }
 
 a.stat-tile:hover {
@@ -1724,6 +1784,13 @@ a.stat-tile:hover {
   font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
+  transition-property: background-color, color, box-shadow;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease);
+}
+
+.tabs a:hover:not([aria-current="page"]) {
+  color: var(--text);
 }
 
 .tabs a[aria-current="page"] {
@@ -1762,8 +1829,14 @@ a.stat-tile:hover {
 .problem-row .problem-meta {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
   grid-column: 2;
+}
+
+/* Keep Start / Practice again at the row's right edge on phones, even when it wraps. */
+.problem-row .problem-meta > .btn {
+  margin-left: auto;
 }
 
 @media (min-width: 820px) {
@@ -1851,8 +1924,9 @@ a.stat-tile:hover {
   font-weight: 600;
   text-align: left;
   cursor: pointer;
-  transition-property: background-color, border-color;
-  transition-duration: 150ms;
+  transition-property: background-color, border-color, border-radius;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease);
 }
 
 .assist-btn:hover {
@@ -1867,7 +1941,7 @@ a.stat-tile:hover {
 
 .assist-btn .chev {
   margin-left: auto;
-  transition: transform 150ms var(--ease);
+  transition: transform var(--dur-fast) var(--ease);
 }
 
 .assist-btn[aria-expanded="true"] .chev {
@@ -1885,6 +1959,27 @@ a.stat-tile:hover {
 
 .assist-panel:focus-visible {
   outline-offset: -2px;
+}
+
+/* Hints and the answer unfold down from their button instead of popping in. */
+.assist-panel:not([hidden]) {
+  animation: unfold var(--dur-normal) var(--ease-enter);
+}
+
+/* Each extra hint eases in below the earlier ones. */
+.hint-item + .hint-item {
+  animation: rise var(--dur-normal) var(--ease-enter);
+}
+
+@keyframes unfold {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
 }
 
 .rating {
@@ -1920,8 +2015,9 @@ a.stat-tile:hover {
   font-weight: 650;
   text-align: left;
   cursor: pointer;
-  transition-property: transform, box-shadow, border-color;
-  transition-duration: 150ms;
+  transition-property: transform, box-shadow, border-color, opacity;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease);
 }
 
 .rate-btn span {
@@ -1991,7 +2087,7 @@ a.stat-tile:hover {
   border-radius: var(--radius);
   background: var(--surface-2);
   border: 1px solid var(--border);
-  animation: rise 220ms var(--ease);
+  animation: rise var(--dur-normal) var(--ease-enter);
 }
 
 @keyframes rise {
@@ -2050,22 +2146,65 @@ a.stat-tile:hover {
 .sheet {
   width: min(760px, calc(100vw - 24px));
   max-height: min(88dvh, 900px);
+  flex-direction: column;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-lg);
+  /* Closing: a quick fade and settle. Opening uses the gentler values on [open] below. */
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  transition-property: opacity, transform;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-exit);
 }
 
 .sheet::backdrop {
   background: var(--overlay);
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: linear;
 }
 
 .sheet[open] {
   display: flex;
-  flex-direction: column;
-  animation: rise 200ms var(--ease);
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--dur-normal);
+  transition-timing-function: var(--ease-enter);
+}
+
+.sheet[open]::backdrop {
+  opacity: 1;
+  transition-duration: var(--dur-normal);
+}
+
+@starting-style {
+  .sheet[open] {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  .sheet[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* The closing fade needs the dialog kept in the top layer until it ends (overlay). Browsers
+   without overlay close instantly instead of fading out in the wrong place. */
+@supports (overlay: auto) {
+  .sheet {
+    transition-property: opacity, transform, overlay, display;
+    transition-behavior: allow-discrete;
+  }
+
+  .sheet::backdrop {
+    transition-property: opacity, overlay, display;
+    transition-behavior: allow-discrete;
+  }
 }
 
 .sheet-head,
@@ -2111,6 +2250,9 @@ a.stat-tile:hover {
   font-size: var(--text-sm);
   font-weight: 650;
   cursor: pointer;
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease);
 }
 
 .step-chip[aria-current="step"] {
@@ -2134,6 +2276,11 @@ a.stat-tile:hover {
   margin-top: var(--space-5);
   padding-top: var(--space-5);
   border-top: 1px solid var(--border);
+}
+
+/* A newly chosen worked-solution step eases in (vertical, so it never adds a sideways scrollbar). */
+.step-swap {
+  animation: rise var(--dur-normal) var(--ease-enter);
 }
 
 /* ============================================================ review queue */
@@ -2244,6 +2391,12 @@ a.stat-tile:hover {
   height: 16px;
 }
 
+/* A section with nothing rated yet still shows its (empty) track. */
+.stacked:empty {
+  border-radius: 4px;
+  background: var(--chart-new);
+}
+
 .seg {
   height: 100%;
   min-width: 4px;
@@ -2313,6 +2466,7 @@ a.stat-tile:hover {
 }
 
 .cols {
+  position: relative;
   display: flex;
   align-items: flex-end;
   gap: 6px;
@@ -2332,6 +2486,19 @@ a.stat-tile:hover {
   height: 2px !important;
   border-radius: 1px;
   background: var(--grid-line);
+}
+
+/* Empty state inside the activity chart (the figure caption still states the count). */
+.cols-empty {
+  position: absolute;
+  inset: 0 0 1px;
+  display: grid;
+  place-items: center;
+  padding: var(--space-3);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: center;
+  text-wrap: balance;
 }
 
 .col-labels {
@@ -2400,6 +2567,80 @@ details.table-view summary {
   font-variant-numeric: tabular-nums;
 }
 
+.plan-count {
+  width: 80px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-level {
+  display: none;
+}
+
+/* Plan builder on phones: each section becomes a block (title, then the Foundation / Core /
+   Challenge inputs side by side, then total and mix) instead of a table wider than the screen. */
+@media (max-width: 719px) {
+  .plan-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .plan-table,
+  .plan-table tbody {
+    display: block;
+  }
+
+  .plan-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .plan-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .plan-table tbody th,
+  .plan-table tbody td {
+    padding: 0;
+    border: 0;
+  }
+
+  .plan-table tbody th {
+    grid-column: 1 / -1;
+    color: var(--text);
+    white-space: normal;
+  }
+
+  .plan-table .plan-level {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text-2);
+    font-size: var(--text-xs);
+    font-weight: 650;
+  }
+
+  .plan-table .plan-count {
+    width: 100%;
+  }
+
+  .plan-table .plan-total {
+    text-align: left;
+  }
+
+  .plan-table .plan-mix {
+    grid-column: 2 / -1;
+    align-self: end;
+    padding-bottom: 6px;
+  }
+}
+
 .mix {
   display: flex;
   gap: 2px;
@@ -2453,6 +2694,93 @@ details.table-view summary {
   background: var(--surface-2);
 }
 
+/* ============================================================ loading placeholders */
+.skeleton {
+  background: var(--sunken);
+  box-shadow: none;
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ============================================================ motion: route transitions */
+/* React <ViewTransition> (components/PageTransition.tsx) tags each page page-enter / page-exit,
+   or nav-forward for "next problem" links. The top bar, tab bar and landing header stay put above
+   the moving content, and the active-nav marker glides to its new item. */
+::view-transition {
+  /* Clicks during the short animation reach the new page instead of being swallowed. */
+  pointer-events: none;
+}
+
+::view-transition-old(.page-exit) {
+  animation: var(--dur-fast) var(--ease-exit) both vt-fade-out;
+}
+
+::view-transition-new(.page-enter) {
+  animation:
+    var(--dur-normal) var(--ease-enter) 50ms both vt-fade-in,
+    var(--dur-slow) var(--ease) both vt-rise;
+}
+
+::view-transition-old(.nav-forward) {
+  animation:
+    var(--dur-fast) var(--ease-exit) both vt-fade-out,
+    var(--dur-slow) var(--ease) both vt-slide-out;
+}
+
+::view-transition-new(.nav-forward) {
+  animation:
+    var(--dur-normal) var(--ease-enter) 80ms both vt-fade-in,
+    var(--dur-slow) var(--ease) both vt-slide-in;
+}
+
+::view-transition-group(app-topbar),
+::view-transition-group(app-tabbar),
+::view-transition-group(site-header) {
+  z-index: 100;
+}
+
+::view-transition-group(nav-indicator),
+::view-transition-group(tab-indicator) {
+  z-index: 101;
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease);
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-rise {
+  from {
+    transform: translateY(8px);
+  }
+}
+
+@keyframes vt-slide-out {
+  to {
+    transform: translateX(-32px);
+  }
+}
+
+@keyframes vt-slide-in {
+  from {
+    transform: translateX(32px);
+  }
+}
+
 /* ============================================================ motion & forced colors */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -2462,6 +2790,20 @@ details.table-view summary {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* The rule above doesn't reach view-transition pseudo-elements: page changes become a short
+     cross-fade with no movement, and the nav marker jumps instead of gliding. */
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+  }
+
+  ::view-transition-old(*) {
+    animation: var(--dur-fast) linear both vt-fade-out !important;
+  }
+
+  ::view-transition-new(*) {
+    animation: var(--dur-fast) linear both vt-fade-in !important;
   }
 }
 
@@ -2476,6 +2818,11 @@ details.table-view summary {
   .nav-link[aria-current="page"],
   .tab[aria-current="page"] {
     outline: 2px solid Highlight;
+  }
+  .nav-indicator,
+  .tab-indicator {
+    forced-color-adjust: none;
+    background: Highlight;
   }
 }
 

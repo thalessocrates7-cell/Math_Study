@@ -1,14 +1,19 @@
+import { ViewTransition } from "react";
+
 export default function Loading() {
   return (
-    <div className="page" aria-busy="true" aria-live="polite">
-      <p className="sr-only">Loading…</p>
-      <div className="stack">
-        <div className="card" style={{ height: 96, opacity: 0.6 }} />
-        <div className="grid grid-2">
-          <div className="card" style={{ height: 220, opacity: 0.6 }} />
-          <div className="card" style={{ height: 220, opacity: 0.6 }} />
+    // The skeleton fades out when the page arrives (the page itself fades in; see PageTransition).
+    <ViewTransition exit="page-exit" default="none">
+      <div className="page" aria-busy="true" aria-live="polite">
+        <p className="sr-only">Loading…</p>
+        <div className="stack">
+          <div className="card skeleton" style={{ height: 96 }} />
+          <div className="grid grid-2">
+            <div className="card skeleton" style={{ height: 220 }} />
+            <div className="card skeleton" style={{ height: 220 }} />
+          </div>
         </div>
       </div>
-    </div>
+    </ViewTransition>
   );
 }

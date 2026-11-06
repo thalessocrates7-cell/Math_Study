@@ -168,6 +168,7 @@ export function ActivityColumns({ data }: { data: Array<{ day: string; count: nu
   return (
     <figure style={{ margin: 0 }}>
       <div className="cols" role="img" aria-label={label}>
+        {total === 0 ? <span className="cols-empty">Problems you rate will show up here, one bar per day.</span> : null}
         {data.map((d) => (
           <span
             key={d.day}

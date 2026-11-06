@@ -10,6 +10,7 @@ import { FunctionPlot } from "@/components/FunctionPlot";
 import { getDb } from "@/db/client";
 import { requireAdmin } from "@/lib/auth";
 import { getProblem } from "@/server/practice";
+import { PageTransition } from "@/components/PageTransition";
 
 export const metadata: Metadata = { title: "Admin · Edit problem" };
 
@@ -65,66 +66,68 @@ export default async function EditProblemPage({ params, searchParams }: Props) {
   }
 
   return (
-    <div className="page" style={{ maxWidth: 1280 }}>
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <ol>
-          <li>
-            <Link href="/admin/problems">Problem Bank</Link>
-          </li>
-          <li aria-current="page">{mode === "create" ? "New problem" : id}</li>
-        </ol>
-      </nav>
-      <header className="page-header">
-        <div>
-          <h1>{mode === "create" ? "Add a problem" : `Edit ${id}`}</h1>
-          <p className="lede">
-            {mode === "create"
-              ? "New problems join the pool for their section; adjust the Study Plan counts to assign them."
-              : "Changes show up for students right away. Answers to edited problems are not re-checked automatically."}
-          </p>
-        </div>
-      </header>
-      {sp.saved === "1" ? (
-        <div className="alert alert-success" role="status" style={{ marginBottom: 16 }}>
-          Saved.
-        </div>
-      ) : null}
-      {sp.retired === "1" ? (
-        <div className="alert alert-info" role="status" style={{ marginBottom: 16 }}>
-          Students have worked this problem, so it was retired instead of deleted. Their history is kept and it no longer appears in plans.
-        </div>
-      ) : null}
-      {figure ? (
-        <section className="card" style={{ marginBottom: 16 }} aria-label="Figure">
-          <p className="small text-2">This problem has a figure (edit it in the content files):</p>
-          {figure}
-        </section>
-      ) : null}
-      <ProblemEditor key={id} mode={mode} initial={initial} sections={sections} />
-      {mode === "update" ? (
-        <section className="card section-gap" aria-labelledby="delete-problem-title">
-          <h2 id="delete-problem-title" className="card-title">
-            Delete problem
-          </h2>
-          <p className="small text-2" style={{ marginBottom: 12 }}>
-            If any student has worked this problem it is retired instead, so their history stays intact.
-          </p>
-          <form action={deleteProblemAction}>
-            <input type="hidden" name="id" value={id} />
-            <ConfirmSubmit
-              label={
-                <>
-                  <Trash size={16} aria-hidden="true" />
-                  Delete problem
-                </>
-              }
-              title={`Delete ${id}?`}
-              body="The problem will be removed from every study plan. Students who already worked it keep their history."
-              confirmLabel="Delete"
-            />
-          </form>
-        </section>
-      ) : null}
-    </div>
+    <PageTransition>
+      <div className="page" style={{ maxWidth: 1280 }}>
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link href="/admin/problems">Problem Bank</Link>
+            </li>
+            <li aria-current="page">{mode === "create" ? "New problem" : id}</li>
+          </ol>
+        </nav>
+        <header className="page-header">
+          <div>
+            <h1>{mode === "create" ? "Add a problem" : `Edit ${id}`}</h1>
+            <p className="lede">
+              {mode === "create"
+                ? "New problems join the pool for their section; adjust the Study Plan counts to assign them."
+                : "Changes show up for students right away. Answers to edited problems are not re-checked automatically."}
+            </p>
+          </div>
+        </header>
+        {sp.saved === "1" ? (
+          <div className="alert alert-success" role="status" style={{ marginBottom: 16 }}>
+            Saved.
+          </div>
+        ) : null}
+        {sp.retired === "1" ? (
+          <div className="alert alert-info" role="status" style={{ marginBottom: 16 }}>
+            Students have worked this problem, so it was retired instead of deleted. Their history is kept and it no longer appears in plans.
+          </div>
+        ) : null}
+        {figure ? (
+          <section className="card" style={{ marginBottom: 16 }} aria-label="Figure">
+            <p className="small text-2">This problem has a figure (edit it in the content files):</p>
+            {figure}
+          </section>
+        ) : null}
+        <ProblemEditor key={id} mode={mode} initial={initial} sections={sections} />
+        {mode === "update" ? (
+          <section className="card section-gap" aria-labelledby="delete-problem-title">
+            <h2 id="delete-problem-title" className="card-title">
+              Delete problem
+            </h2>
+            <p className="small text-2" style={{ marginBottom: 12 }}>
+              If any student has worked this problem it is retired instead, so their history stays intact.
+            </p>
+            <form action={deleteProblemAction}>
+              <input type="hidden" name="id" value={id} />
+              <ConfirmSubmit
+                label={
+                  <>
+                    <Trash size={16} aria-hidden="true" />
+                    Delete problem
+                  </>
+                }
+                title={`Delete ${id}?`}
+                body="The problem will be removed from every study plan. Students who already worked it keep their history."
+                confirmLabel="Delete"
+              />
+            </form>
+          </section>
+        ) : null}
+      </div>
+    </PageTransition>
   );
 }

@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { setTheme } from "@/app/actions/auth";
+import { crossFade } from "@/lib/motion";
 
 type Pref = "light" | "dark" | "system";
 
@@ -32,8 +33,10 @@ export function ThemeToggle({ initial }: { initial: Pref }) {
       aria-label={`Switch to ${next} theme`}
       title={`Switch to ${next} theme`}
       onClick={() => {
-        document.documentElement.dataset.theme = next;
         setResolved(next);
+        crossFade(() => {
+          document.documentElement.dataset.theme = next;
+        });
         startTransition(() => setTheme(next));
       }}
     >

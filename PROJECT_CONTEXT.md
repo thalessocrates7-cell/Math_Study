@@ -116,6 +116,48 @@ From the design doc + mockups: minimal, professional, SaaS-like; **Inter**; 8px 
 
 ## 8. Status — UNFINISHED / next steps (in order)
 
+### Update 2026-11-05, late session (supersedes stale parts below)
+- Verified: e2e run 2 (`test-results/e2e-run2.txt`) = **19/19 pass**, so item 1 below is done. `tsc` clean, Vitest 36/36. The project now has **its own git repo** (`main`, commit `94f954f`, in sync with `origin` = github.com/thalessocrates7-cell/Math_Study). Still ask before any push.
+- **New local admin code** is in `.env.local`, as a comment above `ADMIN_CODE_HASH` (dev only). The old scratchpad code no longer works. Sign-in with the new code was tested on 2026-11-06 and works.
+- User decisions: keep the dev server (3263) running. The visual review must use the UI/UX skills (the Tier 1 roster in `~/.claude/skills/chm-111-trainer/SKILL.md`, minus `artifact-design`) and add **smooth transitions**. The user wants a **step-by-step Vercel + Neon walkthrough**; check current Vercel/Neon steps on the web before writing it.
+### Update 2026-11-06: visual pass and smooth transitions BUILT (not committed)
+Phone-width fixes (from the 390px screenshots):
+- Admin Plan Builder stacks each section on phones (`.plan-table`; phone-only `.plan-level` labels; input width moved from an inline style to `.plan-count`).
+- Section page: Start / Practice again buttons stay at the row's right edge (`.problem-meta > .btn { margin-left: auto }`).
+- Top-bar avatar link: no underline, hover ring instead.
+- Stat cards are 2×2 on phones (`.stat-grid` on /progress, /admin/dashboard, /admin/students/[id]).
+- Sideways-scrolling tables get edge scroll shadows (`.table-wrap`/`.table-scroll`, token `--scroll-shadow`; `--scroll-bg` must match the card behind; set to surface-2 inside `.assist-panel`).
+- Charts: empty rating rows show a grey track (`.stacked:empty`); the empty 14-day activity chart shows a message (`.cols-empty`).
+- Dropped finding: "integral...." is the CSS line-clamp ellipsis after a sentence's period. Standard behavior, left alone.
+
+Motion (CSS plus React `<ViewTransition>`, no new dependencies; tokens `--dur-fast/normal/slow` and `--ease-enter/exit` in tokens.css):
+- `src/components/PageTransition.tsx` wraps all 17 page.tsx files: the new page fades and rises in, the old one fades out. The practice "Continue" link uses `transitionTypes={["nav-forward"]}` (slide). The section-page difficulty filter uses `["same-page"]` (no animation). `default="none"` keeps server-action refreshes still.
+- Top bar, tab bar and landing header have `view-transition-name`s and z-index 100, so content never animates over them. The active-nav marker is now a real element (`.nav-indicator` in the sidebar, which is new, and `.tab-indicator`, which replaces `::before`) and glides between items.
+- The theme toggle and the Settings theme radios cross-fade (`crossFade()` in `src/lib/motion.ts`). It's skipped under reduced motion.
+- Dialogs (`.sheet`: worked solution and confirmations) fade and scale in with `@starting-style`. They fade out only where `overlay` is supported; elsewhere they close instantly.
+- Hint and answer panels unfold (clip-path). Extra hints and newly chosen solution steps ease in vertically (a sideways slide would add a horizontal scrollbar in the dialog). Rating buttons and step chips transition. The (student) loading skeleton breathes and fades out.
+- Reduced motion: the existing `*` rule doesn't reach `::view-transition-*`, so there are explicit rules (short cross-fade, no movement). Forced colors paint the nav markers Highlight.
+- `dev/contrast.mjs` gained the pair chart-accent on accent-soft (4.08:1, passes).
+
+Verified 2026-11-06 (dev server restarted on 3263 at the user's request; earlier the PC ran out of memory and Next's dev workers crashed): `tsc` clean, Vitest 36/36, contrast all pass, **Playwright 19/19** (`test-results/e2e-run3.txt`; production build OK). Live checks at 390 and 1440, light and dark:
+- 2×2 stats, grey tracks and the un-underlined avatar.
+- Section page: all 15 Start buttons flush right. The filter is a same-document navigation with no view transition.
+- Hint panel runs `unfold`. The dialog opens and closes with transitions and returns focus to the trigger. A new step runs `rise`.
+- Continue runs the `nav-forward` fade-and-slide, and it finishes.
+- The theme toggle cross-fade finishes.
+- Progress → Plan page transition, with the tab-indicator morph.
+- Admin sign-in with the new local code works.
+- Plan builder stacks on phones: 24 inputs on screen, no sideways scroll.
+Not checked: reduced-motion rendering; Safari and Firefox (the dialog exit fade needs `overlay`, so they close instantly by design); the activity-chart empty message (a simple conditional).
+
+Deploy prep (2026-11-06):
+- Vercel's Next.js preset runs `npm run build`, not `vercel-build` (docs: vercel.com/docs/builds/configure-a-build). So `vercel.json` sets `"buildCommand": "npm run vercel-build"` (migrate + seed + build).
+- On Vercel without a database, migrate and seed now fail the build with "connect the Neon database, then Redeploy" (`failIfVercelWithoutDatabase` in scripts/env.ts). `createDb()` throws instead of falling back to PGlite, because Vercel's disk is read-only.
+- Neon from the Vercel Marketplace sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` (direct; used by migrate and seed). Free plan per Neon's FAQ: 1 GB storage, 100 CU-hours/month, 5 GB transfer, no card.
+- Walkthrough so far: step 1 is given (Vercel account via GitHub, plus choosing and hashing the production admin code). Remaining: commit and push (needs the user's OK), import the repo, add `SESSION_SECRET` and `ADMIN_CODE_HASH`, then deploy (the first build stops at the database check, as expected). Then Storage → Neon (US East) → connect to all environments → Redeploy → smoke test.
+Known pre-existing dev-only warning: a hydration attribute mismatch on `.table-wrap`. `OverflowFocus` adds tabindex/role before the page segment hydrates; inside a closed `<details>` Chrome still measures the table as overflowing. It's harmless in production (React doesn't patch attributes) but shows as "1 Issue" in the dev overlay.
+Still to do: finish the Vercel + Neon walkthrough (above); the README and a project CLAUDE.md; the one-line entry in `C:\Users\thale\CLAUDE.md`; cleanup (§8.5). Commit and push need the user's OK.
+
 1. **Re-run the Playwright suite** (`npx next build && npx playwright test`). Last full run (before fixes): 5 passed, 10 failed, 4 not run. I then applied fixes (below) but the **rebuild + re-run was interrupted by the user, so none of the fixes are verified yet.**
    Fixes already applied in code, awaiting verification:
    - `Brand.tsx`: removed `aria-label` (axe `label-content-name-mismatch`); visible text is now the accessible name.

@@ -2,10 +2,11 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
-import { databaseUrl, loadLocalEnv } from "./env";
+import { databaseUrl, failIfVercelWithoutDatabase, loadLocalEnv } from "./env";
 
 loadLocalEnv();
 const url = databaseUrl();
+failIfVercelWithoutDatabase(url);
 if (!url) {
   console.log("DATABASE_URL is not set: skipping. (Locally the app uses PGlite, which migrates itself.)");
   process.exit(0);
