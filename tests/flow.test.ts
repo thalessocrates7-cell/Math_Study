@@ -6,11 +6,13 @@ import { assignments, attempts, problems, reviewItems } from "../src/db/schema";
 import {
   classOverview,
   deleteProblem,
+  planRows,
   recentLoginFailures,
   recordStudentSignIn,
   STUDENT_SIGNIN_MAX,
   studentDetail,
   studentSignInRetryAt,
+  validatePlan,
 } from "../src/server/admin";
 import { openAttempt, rateAttempt, recordAssist, saveNote, workspaceData } from "../src/server/practice";
 import { dashboardStats, loadStudentState, recommend, reviewGroups } from "../src/server/progress";
@@ -117,6 +119,13 @@ describe("admin", () => {
     const detail = await studentDetail(db, alice.student.id);
     expect(detail?.history.length).toBe(2);
     expect(detail?.ratingPercents.lost).toBe(50);
+    expect(overview.bySection.map((b) => b.sectionId)).not.toContain("4.1");
+  });
+
+  it("keeps the empty 4.1/4.2 shells out of the Plan Builder, so it can still be saved", async () => {
+    const rows = await planRows(db);
+    expect(rows.map((r) => r.sectionId)).toEqual(["4.10", "5.1", "5.2", "5.3", "5.4", "5.5", "5.6", "5.7"]);
+    expect(validatePlan(rows.map((r) => ({ sectionId: r.sectionId, ...r.counts })), rows)).toBeNull();
   });
 
   it("deactivates (not deletes) a problem with history, and refills plans", async () => {
