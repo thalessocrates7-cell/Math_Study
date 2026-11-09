@@ -1,19 +1,25 @@
 # Adaptive study system: progress and what's left
 
-Last updated: **2026-11-07 (Sat), afternoon**. Exam 4 is **Wed 2026-12-02**.
+Last updated: **2026-11-09 (Mon)**. Exam 4 is **Wed 2026-12-02**.
 
 - **Approved plan:** `C:\Users\thale\.claude\plans\c-users-thale-donloads-mth-263-calculus-federated-moth.md`.
 - **Older handoff:** `PROJECT_CONTEXT.md`, which describes the site as it was before this work.
 
 ## Status at a glance
 
-- **Branch:** `adaptive`, local only. **Nothing is committed or pushed.**
-- **Live site:** https://math-study-h4h3.vercel.app is **untouched**.
+- **Live since 2026-11-09:** at your request ("push main"), stages 1–2 went to `main`, which deploys https://math-study-h4h3.vercel.app.
+  - Classmates now get the schedule setup, Today's session and the quiet timer.
+  - The Study Plan, Review and Progress pages stay the old ones until stage 6.
+- **Branches:** work continues on `adaptive`, which Vercel never builds. Merging it into `main` publishes to the live site, so ask first.
 - **Done:** the planner engine, **stage 1** (schedule setup and settings) and **stage 2** (study sessions and the quiet timer), with server code, screens and tests.
 - **Now:** the **stage 3 ★ review** with you (questions at the end of this file). Stage 4 starts after that.
+- **Upgrade-tested before going live:** the live site's old code built a database with student activity, then the new code upgraded it.
+  - No rows were lost, and the 13 old "Got it" checks were closed as planned.
+  - Every page's server code worked for the upgraded students.
+  - The test caught one bug: the admin Plan Builder listed the empty 4.1/4.2 sections and could never be saved. Fixed and covered by a test.
 - **Checks (all green):**
   - `npx tsc --noEmit` (also clean with `--noUnusedLocals`);
-  - `npx vitest run`: 76 tests in 6 files;
+  - `npx vitest run`: 77 tests in 6 files;
   - `npx next build`, `npm run contrast`, `npm run content:check`.
 - **Browser-checked** at 1440 px and 390 px, light and dark: sign-in, setup, dashboard card, session page (plan, in progress, done, Keep going), practice with Pause and the timer, Settings, and the form's error state.
 
@@ -222,9 +228,16 @@ Skip, reasons, the end-of-session prompt, final-review days, and the Review page
 
 ## Cautions before any push or deploy (ask first, always)
 
-- **Preview builds may hit the live database.** Vercel's Neon connection was set for "all environments". Pushing the `adaptive` branch could make a **preview** build run the new migration and seed on the **live** database. The 4.1/4.2 shells would then show up on the live site early. Before pushing, check the preview's database setting, or keep the branch local until release.
-- **Back up before the first live migration:** a CSV export from `/admin`, plus a Neon backup branch.
-- **Release 1 goes out in one piece:** stages 1–6 merged to `main` together, so classmates never see half a system.
+- **`main` is the live site.** Every push to `main` runs the migrations and the seed on the live Neon database, then deploys.
+- **Previews never change the database.**
+  - `adaptive` doesn't build on Vercel at all (`git.deploymentEnabled` in `vercel.json`).
+  - Any other preview build skips the migrations and the seed (`skipOnPreview` in `scripts/env.ts`), because Neon is connected to all environments.
+- **Test every new migration as an upgrade**, not only on an empty database. That's how 0001 was checked:
+  1. Extract the live code with `git archive origin/main`.
+  2. Fill a PGlite folder using that old code.
+  3. Run the new code's migration, seed and server functions on that folder.
+- **Back up before the next migration:** a CSV export from `/admin`, plus a Neon backup branch. This wasn't done for 0001, which only adds and was upgrade-tested first.
+- **Release plan changed on 2026-11-09:** stages 1–2 went live early, at your request. Later stages go live as they're merged.
 - **Enum values:** the migration adds enum values (`ALTER TYPE ... ADD VALUE`). They must not be *used* inside the same migration, because Drizzle runs all pending migrations in one transaction.
 - **`pg` 9 later:** rating runs a few queries in parallel inside one transaction. `pg` 8 queues them, with a one-time deprecation warning. `pg` 9 would need them in sequence.
 
