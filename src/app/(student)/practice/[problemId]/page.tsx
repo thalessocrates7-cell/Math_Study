@@ -3,15 +3,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DIFFICULTIES, DIFFICULTY_BLURB, DIFFICULTY_LABEL } from "@content/types";
-import { DifficultyBadge, problemLabel } from "@/components/Badges";
+import { skipItemAction } from "@/app/actions/session";
+import { DifficultyBadge, problemLabel, RatingPill } from "@/components/Badges";
 import { FunctionPlot } from "@/components/FunctionPlot";
+import { PageTransition } from "@/components/PageTransition";
 import { Workspace } from "@/components/practice/Workspace";
 import { ProgressBar } from "@/components/Progress";
+import { TrackPill } from "@/components/session/SessionParts";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
+import { formatMonthDay } from "@/lib/dates";
 import { renderRich } from "@/lib/tex";
-import { workspaceData } from "@/server/practice";
-import { PageTransition } from "@/components/PageTransition";
+import { type HistoryRow, problemHistory, workspaceData } from "@/server/practice";
+import { sessionBarFor } from "@/server/sessions";
 
 type Props = {
   params: Promise<{ problemId: string }>;
@@ -19,6 +23,8 @@ type Props = {
 };
 
 export const metadata: Metadata = { title: "Practice" };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const REASON: Record<string, string> = {
   shaky: "Review: you marked this one Shaky",
@@ -28,21 +34,37 @@ const REASON: Record<string, string> = {
   easier: "Easier problem on the same idea",
 };
 
+function helpText(h: HistoryRow): string {
+  const used = [h.hintsShown > 0 ? `${h.hintsShown} hint${h.hintsShown === 1 ? "" : "s"}` : null, h.answerRevealed ? "answer" : null, h.solutionViewed ? "worked solution" : null].filter(Boolean);
+  return used.length ? `Used ${used.join(", ")}` : "No help used";
+}
+
 export default async function PracticePage({ params, searchParams }: Props) {
   const student = await requireStudent();
   const { problemId: raw } = await params;
   const sp = await searchParams;
   const problemId = decodeURIComponent(raw);
   const itemId = typeof sp.item === "string" ? sp.item : null;
+  const sessionParam = typeof sp.s === "string" && UUID_RE.test(sp.s) ? sp.s : null;
   const db = await getDb();
-  const data = await workspaceData(db, student.id, problemId, itemId);
+  const [data, bar, history] = await Promise.all([
+    workspaceData(db, student.id, problemId, itemId),
+    sessionParam ? sessionBarFor(db, student.id, sessionParam, problemId) : Promise.resolve(null),
+    problemHistory(db, student.id, problemId),
+  ]);
   if (!data) notFound();
 
   const { problem, section } = data;
+  const label = problemLabel(problem.openstaxNumber, problem.id);
   const pct = data.total ? Math.round((data.done / data.total) * 100) : 0;
-  const tag = data.position
-    ? `Problem ${data.position} · ${problemLabel(problem.openstaxNumber, problem.id)}`
-    : `Extra practice · ${problemLabel(problem.openstaxNumber, problem.id)}`;
+  const itemOpen = bar ? bar.item.status !== "done" && bar.item.status !== "skipped" : false;
+  const tag = bar
+    ? bar.index
+      ? `Problem ${bar.index} of ${bar.total} · ${label}`
+      : `Extra practice · ${label}`
+    : data.position
+      ? `Problem ${data.position} · ${label}`
+      : `Extra practice · ${label}`;
 
   const asideTop = (
     <>
@@ -77,29 +99,52 @@ export default async function PracticePage({ params, searchParams }: Props) {
     </>
   );
 
-  const asideBottom =
-    data.recentWeak.length > 0 ? (
-      <section className="card side-card" aria-labelledby="recent-review-title">
-        <h2 id="recent-review-title">Recent Review in This Section</h2>
-        <ul className="list">
-          {data.recentWeak.map((w) => (
-            <li key={w.problemId}>
-              <Link className="row-link small" href={`/practice/${encodeURIComponent(w.problemId)}`}>
-                {w.rating === "lost" ? (
-                  <CircleX size={16} aria-hidden="true" style={{ color: "var(--danger-icon)" }} />
-                ) : (
-                  <TriangleExclamationPoint size={16} aria-hidden="true" style={{ color: "var(--warning-icon)" }} />
-                )}
+  const asideBottom = (
+    <>
+      {history.length > 0 ? (
+        <section className="card side-card" aria-labelledby="history-title">
+          <h2 id="history-title">Your Earlier Tries</h2>
+          <ul className="list">
+            {history.slice(0, 5).map((h) => (
+              <li key={h.id} className="history-row">
                 <span className="row-main">
-                  <span>{problemLabel(w.openstaxNumber, w.problemId)}</span>
-                  <span className="row-sub">Last rated {w.rating === "lost" ? "Lost" : "Shaky"}</span>
+                  <span className="small" style={{ fontWeight: 600 }}>
+                    {formatMonthDay(h.ratedDay)}
+                  </span>
+                  <span className="row-sub">{helpText(h)}</span>
                 </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-    ) : null;
+                <RatingPill rating={h.rating} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {data.recentWeak.length > 0 ? (
+        <section className="card side-card" aria-labelledby="recent-review-title">
+          <h2 id="recent-review-title">Recent Review in This Section</h2>
+          <ul className="list">
+            {data.recentWeak.map((w) => (
+              <li key={w.problemId}>
+                <Link className="row-link small" href={`/practice/${encodeURIComponent(w.problemId)}`}>
+                  {w.rating === "lost" ? (
+                    <CircleX size={16} aria-hidden="true" style={{ color: "var(--danger-icon)" }} />
+                  ) : (
+                    <TriangleExclamationPoint size={16} aria-hidden="true" style={{ color: "var(--warning-icon)" }} />
+                  )}
+                  <span className="row-main">
+                    <span>{problemLabel(w.openstaxNumber, w.problemId)}</span>
+                    <span className="row-sub">Last rated {w.rating === "lost" ? "Lost" : "Shaky"}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </>
+  );
+
+  const crumb = bar ? { href: "/session", text: "Today's Session" } : data.reviewItem ? { href: "/review", text: "Review Queue" } : { href: "/plan", text: "Study Plan" };
 
   return (
     <PageTransition>
@@ -107,7 +152,7 @@ export default async function PracticePage({ params, searchParams }: Props) {
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <ol>
             <li>
-              <Link href={data.reviewItem ? "/review" : "/plan"}>{data.reviewItem ? "Review Queue" : "Study Plan"}</Link>
+              <Link href={crumb.href}>{crumb.text}</Link>
             </li>
             <li>
               <Link href={`/plan/${section.id}`}>{`${section.id} ${section.title}`}</Link>
@@ -120,11 +165,37 @@ export default async function PracticePage({ params, searchParams }: Props) {
             <h1>
               {section.id} – {section.title}
             </h1>
-            {data.reviewItem ? <p className="lede">{REASON[data.reviewItem.reason]}</p> : null}
+            {!bar && data.reviewItem ? <p className="lede">{REASON[data.reviewItem.reason]}</p> : null}
           </div>
           <DifficultyBadge d={problem.difficulty} />
         </header>
-        {data.position ? (
+
+        {bar ? (
+          <>
+            <div className="ws-progress">
+              <div className="spread small">
+                <span style={{ fontWeight: 600 }}>Today&apos;s session</span>
+                <span className="text-2 num">
+                  {bar.done} of {bar.total} done{bar.spentMinutes > 0 ? ` · about ${bar.spentMinutes} of ${bar.budgetMinutes} min` : ""}
+                </span>
+              </div>
+              <ProgressBar value={bar.done} max={bar.total} label="Today's session" />
+            </div>
+            <section className="why" aria-label="Why this problem">
+              <TrackPill track={bar.item.track} bonus={bar.item.reason.code === "bonus_challenge"} />
+              <p className="small">{bar.reasonText}</p>
+              {itemOpen && bar.item.track === "lookback" ? (
+                <form action={skipItemAction} className="why-skip">
+                  <input type="hidden" name="item" value={bar.item.id} />
+                  <input type="hidden" name="from" value="practice" />
+                  <button className="btn btn-ghost btn-sm" type="submit">
+                    Skip this look-back
+                  </button>
+                </form>
+              ) : null}
+            </section>
+          </>
+        ) : data.position ? (
           <div className="ws-progress">
             <div className="spread small">
               <span style={{ fontWeight: 600 }}>
@@ -142,9 +213,12 @@ export default async function PracticePage({ params, searchParams }: Props) {
         ) : null}
 
         <Workspace
-          key={`${problem.id}:${itemId ?? ""}`}
+          key={`${problem.id}:${itemId ?? ""}:${bar?.item.id ?? ""}`}
           problemId={problem.id}
           itemId={data.reviewItem?.id ?? null}
+          sessionItemId={bar ? bar.item.id : null}
+          sessionId={bar ? bar.sessionId : null}
+          estimateMinutes={bar ? bar.item.minutes : null}
           tag={tag}
           statementHtml={renderRich(problem.statement)}
           figure={problem.figure ? <FunctionPlot spec={problem.figure} /> : null}

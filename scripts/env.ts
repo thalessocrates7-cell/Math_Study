@@ -7,6 +7,18 @@ export function loadLocalEnv() {
   }
 }
 
+/**
+ * Preview builds must never change the shared database: Neon is connected to all environments, so a
+ * preview of a work-in-progress branch would migrate and re-seed the live site's data. Production builds
+ * are unaffected. Set ALLOW_PREVIEW_DB_WRITES=1 on Vercel only once previews have their own database.
+ */
+export function skipOnPreview(task: string) {
+  if (process.env.VERCEL_ENV === "preview" && process.env.ALLOW_PREVIEW_DB_WRITES !== "1") {
+    console.log(`Preview build: skipping ${task} so the shared database is never changed.`);
+    process.exit(0);
+  }
+}
+
 export function databaseUrl(): string | undefined {
   return process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL || undefined;
 }

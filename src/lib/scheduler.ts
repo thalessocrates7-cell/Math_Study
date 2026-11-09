@@ -1,17 +1,18 @@
 /**
- * Review scheduling rules (design doc §4.3), as pure functions.
+ * Targeted reinforcement rules, as pure functions.
  *
- *  Got It  -> review the same problem in 14 days; no extra practice.
+ *  Got It  -> nothing extra. Retention is checked by Regressive Study (look-backs) and by the next
+ *             day's Challenge, so the old "same problem in 14 days" review is gone.
  *  Shaky   -> review the same problem tomorrow, plus a SIMILAR problem (same section and difficulty,
  *             sharing a concept) tomorrow.
  *  Lost    -> serve an EASIER related problem right away (same concept, Foundation if possible), and
- *             review the original tomorrow. The section is flagged for extra focus.
+ *             review the original tomorrow.
  */
 import type { Difficulty } from "../../content/types";
 import { addDays } from "./dates";
 import { hashString } from "./random";
 
-export const INTERVAL_DAYS = { got_it: 14, shaky: 1, lost: 1 } as const;
+export const INTERVAL_DAYS = { shaky: 1, lost: 1 } as const;
 
 export type ScheduledRating = "got_it" | "shaky" | "lost";
 export type ReviewReasonOut = "got_it" | "shaky" | "lost" | "similar" | "easier";
@@ -37,6 +38,11 @@ export type ScheduleInput = {
   assigned: ReadonlySet<string>;
   /** Stable per-student seed for tie-breaks. */
   seed: string;
+  /**
+   * Serve the easier problem right away after Lost (default). False when the Lost was itself on an
+   * easier follow-up: the next one waits until tomorrow instead of chaining easier problems.
+   */
+  immediateEasier?: boolean;
 };
 
 export type PlannedReview = {
@@ -122,13 +128,7 @@ export function pickEasier(input: ScheduleInput): PoolProblem | null {
 
 export function scheduleAfterRating(input: ScheduleInput): ScheduleResult {
   const { rating, problem, today } = input;
-  if (rating === "got_it") {
-    return {
-      items: [{ problemId: problem.id, sourceProblemId: null, dueDate: addDays(today, INTERVAL_DAYS.got_it), reason: "got_it" }],
-      nextProblemId: null,
-      followUpId: null,
-    };
-  }
+  if (rating === "got_it") return { items: [], nextProblemId: null, followUpId: null };
   if (rating === "shaky") {
     const similar = pickSimilar(input);
     const items: PlannedReview[] = [
@@ -140,23 +140,40 @@ export function scheduleAfterRating(input: ScheduleInput): ScheduleResult {
     return { items, nextProblemId: null, followUpId: similar?.id ?? null };
   }
   const easier = pickEasier(input);
+  const now = input.immediateEasier !== false;
   const items: PlannedReview[] = [
     { problemId: problem.id, sourceProblemId: null, dueDate: addDays(today, INTERVAL_DAYS.lost), reason: "lost" },
   ];
   if (easier) {
-    items.push({ problemId: easier.id, sourceProblemId: problem.id, dueDate: today, reason: "easier" });
+    items.push({ problemId: easier.id, sourceProblemId: problem.id, dueDate: now ? today : addDays(today, 1), reason: "easier" });
   }
-  return { items, nextProblemId: easier?.id ?? null, followUpId: easier?.id ?? null };
+  return { items, nextProblemId: now ? (easier?.id ?? null) : null, followUpId: easier?.id ?? null };
 }
 
-export function ratingMessage(rating: ScheduledRating, result: ScheduleResult, dueLabel: string): string {
-  if (rating === "got_it") return `Nice work. You'll see this one again on ${dueLabel} to make sure it sticks.`;
+/**
+ * After a Got it without the worked solution on a problem that was rated Shaky or Lost before, its
+ * pending follow-ups (the similar or easier problems made from it) are no longer needed. The original's
+ * own re-check is never closed this way: getting an easier problem right doesn't show the original stuck.
+ */
+export function followUpsToClose(
+  pending: ReadonlyArray<{ id: string; problemId: string; sourceProblemId: string | null; reason: string }>,
+  ratedProblemId: string,
+): string[] {
+  return pending.filter((r) => r.sourceProblemId === ratedProblemId && (r.reason === "similar" || r.reason === "easier")).map((r) => r.id);
+}
+
+export function ratingMessage(rating: ScheduledRating, result: ScheduleResult, opts: { solutionViewed?: boolean } = {}): string {
+  if (rating === "got_it") {
+    return opts.solutionViewed
+      ? "Nice. Since you used the worked solution, a problem like this comes back on a later day so you can try it on your own."
+      : "Nice work. This idea comes back on a later day to check that it stuck.";
+  }
   if (rating === "shaky") {
     return result.followUpId
       ? "Added to your review queue for tomorrow, along with a similar problem for extra practice."
       : "Added to your review queue for tomorrow.";
   }
-  return result.followUpId
-    ? "That's okay. Next up is an easier problem on the same idea. This one comes back tomorrow."
-    : "That's okay. This one is in your review queue for tomorrow. Read the worked solution once more before moving on.";
+  if (result.nextProblemId) return "That's okay. Next up is an easier problem on the same idea. This one comes back tomorrow.";
+  if (result.followUpId) return "That's okay. This one comes back tomorrow, with an easier problem on the same idea. Read the worked solution once more before moving on.";
+  return "That's okay. This one is in your review queue for tomorrow. Read the worked solution once more before moving on.";
 }

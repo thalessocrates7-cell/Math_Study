@@ -14,7 +14,14 @@ import {
   writeTheme,
   type ThemePref,
 } from "@/lib/session";
-import { clearLoginFailures, LOGIN_MAX_FAILURES, recentLoginFailures, recordLoginFailure } from "@/server/admin";
+import {
+  clearLoginFailures,
+  LOGIN_MAX_FAILURES,
+  recentLoginFailures,
+  recordLoginFailure,
+  recordStudentSignIn,
+  studentSignInRetryAt,
+} from "@/server/admin";
 import { findOrCreateStudent, setStudentTheme } from "@/server/students";
 
 export type SignInState = {
@@ -23,16 +30,26 @@ export type SignInState = {
   values?: { first: string; last: string };
 };
 
+function minutesUntil(at: Date): string {
+  const minutes = Math.max(1, Math.ceil((at.getTime() - Date.now()) / 60_000));
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
+
 export async function signIn(_prev: SignInState, formData: FormData): Promise<SignInState> {
   const first = String(formData.get("first") ?? "");
   const last = String(formData.get("last") ?? "");
   const name = normalizeName(first, last);
   if (!name.ok) return { error: name.error, field: name.field, values: { first, last } };
   const db = await getDb();
+  const ip = await clientIpHash();
+  const retryAt = await studentSignInRetryAt(db, ip);
+  if (retryAt) return { error: `Too many sign-ins from this network. Try again in ${minutesUntil(retryAt)}.`, values: { first, last } };
+  await recordStudentSignIn(db, ip);
   const { student } = await findOrCreateStudent(db, name.first, name.last);
   await createStudentSession(student.id);
   if (student.theme === "light" || student.theme === "dark") await writeTheme(student.theme);
-  redirect("/dashboard");
+  // First visit since the adaptive planner: set up a study schedule before anything else.
+  redirect(student.onboardedAt ? "/dashboard" : "/schedule?setup=1");
 }
 
 export async function signOut(): Promise<void> {
@@ -59,10 +76,7 @@ export async function adminSignIn(_prev: AdminSignInState, formData: FormData): 
   const db = await getDb();
   const ip = await clientIpHash();
   const { count, retryAt } = await recentLoginFailures(db, ip);
-  if (retryAt) {
-    const minutes = Math.max(1, Math.ceil((retryAt.getTime() - Date.now()) / 60_000));
-    return { error: `Too many attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.` };
-  }
+  if (retryAt) return { error: `Too many attempts. Try again in ${minutesUntil(retryAt)}.` };
   if (!code || !verifyAdminCode(code, stored)) {
     await recordLoginFailure(db, ip);
     const left = LOGIN_MAX_FAILURES - count - 1;

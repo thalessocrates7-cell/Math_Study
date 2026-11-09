@@ -1,7 +1,8 @@
-import { and, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { DB, Q } from "../db/client";
 import { assignments, attempts, notes, reviewItems, students, type Student } from "../db/schema";
 import { nameKey, normalizeName } from "../lib/names";
+import type { ScheduleValue } from "../lib/schedule";
 import { ensureAssignments } from "./plan";
 
 export type Theme = "light" | "dark" | "system";
@@ -35,6 +36,28 @@ export async function touchStudent(q: Q, id: string): Promise<void> {
 
 export async function setStudentTheme(q: Q, id: string, theme: Theme): Promise<void> {
   await q.update(students).set({ theme }).where(eq(students.id, id));
+}
+
+/** Saves the study schedule. The first save also marks the student as set up (onboarded). */
+export async function saveSchedule(q: Q, id: string, value: ScheduleValue): Promise<void> {
+  await q
+    .update(students)
+    .set({
+      availability: value.availability,
+      examDateOverride: value.examDateOverride,
+      supplementaryOptIn: value.supplementaryOptIn,
+      onboardedAt: sql`coalesce(${students.onboardedAt}, now())`,
+    })
+    .where(eq(students.id, id));
+}
+
+/** Rated problems so far: students with history see a one-time note about the upgrade. */
+export async function ratedAttemptCount(q: Q, id: string): Promise<number> {
+  const [row] = await q
+    .select({ n: count() })
+    .from(attempts)
+    .where(and(eq(attempts.studentId, id), sql`${attempts.ratedAt} is not null`));
+  return row?.n ?? 0;
 }
 
 export type RenameResult = { ok: true } | { ok: false; error: string } | { ok: false; conflictWith: Student };

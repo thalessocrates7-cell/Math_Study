@@ -1,6 +1,6 @@
 import { ArrowRight, Brain, Layers, RefreshCw, Zap } from "lucide-react";
 import Link from "next/link";
-import { ATTRIBUTION, SECTIONS } from "@content/index";
+import { ATTRIBUTION, CORE_SECTIONS } from "@content/index";
 import { Brand } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { currentStudent } from "@/lib/auth";
@@ -142,7 +142,7 @@ export default async function Home() {
               <p>The eight sections of OpenStax Calculus Volume 1 on Exam 4, in study order.</p>
             </div>
             <ul className="grid grid-4" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-              {SECTIONS.map((s) => (
+              {CORE_SECTIONS.map((s) => (
                 <li key={s.id} className="topic-card">
                   <span className="topic-num">{s.id}</span>
                   <span className="small" style={{ fontWeight: 600 }}>

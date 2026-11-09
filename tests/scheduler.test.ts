@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickEasier, pickSimilar, scheduleAfterRating, type PoolProblem, type ScheduleInput } from "../src/lib/scheduler";
+import { followUpsToClose, pickEasier, pickSimilar, scheduleAfterRating, type PoolProblem, type ScheduleInput } from "../src/lib/scheduler";
 
 const P = (id: string, difficulty: PoolProblem["difficulty"], concepts: string[], sort = 0): PoolProblem => ({ id, difficulty, concepts, sort });
 
@@ -27,9 +27,9 @@ function input(over: Partial<ScheduleInput> & Pick<ScheduleInput, "rating" | "pr
 }
 
 describe("scheduleAfterRating", () => {
-  it("Got It: reviews the same problem in 14 days, nothing else", () => {
+  it("Got It: schedules nothing (look-backs and the next day's Challenge check retention)", () => {
     const r = scheduleAfterRating(input({ rating: "got_it", problem: pool[3] }));
-    expect(r.items).toEqual([{ problemId: "c1", sourceProblemId: null, dueDate: "2026-11-19", reason: "got_it" }]);
+    expect(r.items).toEqual([]);
     expect(r.nextProblemId).toBeNull();
   });
 
@@ -50,8 +50,32 @@ describe("scheduleAfterRating", () => {
   });
 
   it("crosses month boundaries correctly", () => {
-    const r = scheduleAfterRating(input({ rating: "got_it", problem: pool[0], today: "2026-11-25" }));
-    expect(r.items[0].dueDate).toBe("2026-12-09");
+    const r = scheduleAfterRating(input({ rating: "shaky", problem: pool[0], today: "2026-11-30" }));
+    expect(r.items[0].dueDate).toBe("2026-12-01");
+  });
+
+  it("Lost on an easier follow-up: the next easier problem waits until tomorrow (no chains)", () => {
+    const r = scheduleAfterRating(input({ rating: "lost", problem: pool[0], immediateEasier: false }));
+    expect(r.nextProblemId).toBeNull();
+    const easier = r.items.find((i) => i.reason === "easier");
+    expect(easier?.dueDate).toBe("2026-11-06");
+  });
+});
+
+describe("followUpsToClose", () => {
+  const pending = [
+    { id: "r1", problemId: "c1", sourceProblemId: null, reason: "shaky" },
+    { id: "r2", problemId: "c2", sourceProblemId: "c1", reason: "similar" },
+    { id: "r3", problemId: "f1", sourceProblemId: "h1", reason: "easier" },
+    { id: "r4", problemId: "h1", sourceProblemId: null, reason: "lost" },
+  ];
+  it("closes the follow-ups made from a problem once that problem is solved cleanly", () => {
+    expect(followUpsToClose(pending, "c1")).toEqual(["r2"]);
+    expect(followUpsToClose(pending, "h1")).toEqual(["r3"]);
+  });
+  it("never closes the original's re-check when only a follow-up was solved", () => {
+    expect(followUpsToClose(pending, "c2")).toEqual([]);
+    expect(followUpsToClose(pending, "f1")).toEqual([]);
   });
 });
 

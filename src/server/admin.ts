@@ -23,25 +23,52 @@ import { ensureAssignments, getPools, rebalanceAllStudents, savePlanConfigs, stu
 export const LOGIN_WINDOW_MINUTES = 15;
 export const LOGIN_MAX_FAILURES = 5;
 
-export async function recentLoginFailures(q: Q, ipHash: string, now = new Date()): Promise<{ count: number; retryAt: Date | null }> {
-  const since = new Date(now.getTime() - LOGIN_WINDOW_MINUTES * 60_000);
+/** Rows of one kind from one network since a time, oldest first. */
+async function recentRows(q: Q, ipHash: string, kind: "admin" | "student", since: Date): Promise<Date[]> {
   const rows = await q
     .select({ at: adminLoginAttempts.at })
     .from(adminLoginAttempts)
-    .where(and(eq(adminLoginAttempts.ipHash, ipHash), gte(adminLoginAttempts.at, since)))
+    .where(and(eq(adminLoginAttempts.ipHash, ipHash), eq(adminLoginAttempts.kind, kind), gte(adminLoginAttempts.at, since)))
     .orderBy(asc(adminLoginAttempts.at));
-  const retryAt = rows.length >= LOGIN_MAX_FAILURES ? new Date(rows[0].at.getTime() + LOGIN_WINDOW_MINUTES * 60_000) : null;
-  return { count: rows.length, retryAt };
+  return rows.map((r) => r.at);
 }
 
-export async function recordLoginFailure(q: Q, ipHash: string): Promise<void> {
-  await q.insert(adminLoginAttempts).values({ ipHash });
+async function pruneOldRows(q: Q): Promise<void> {
   // Keep the table small.
   await q.delete(adminLoginAttempts).where(sql`${adminLoginAttempts.at} < now() - interval '1 day'`);
 }
 
+export async function recentLoginFailures(q: Q, ipHash: string, now = new Date()): Promise<{ count: number; retryAt: Date | null }> {
+  const rows = await recentRows(q, ipHash, "admin", new Date(now.getTime() - LOGIN_WINDOW_MINUTES * 60_000));
+  const retryAt = rows.length >= LOGIN_MAX_FAILURES ? new Date(rows[0].getTime() + LOGIN_WINDOW_MINUTES * 60_000) : null;
+  return { count: rows.length, retryAt };
+}
+
+export async function recordLoginFailure(q: Q, ipHash: string): Promise<void> {
+  await q.insert(adminLoginAttempts).values({ ipHash, kind: "admin" });
+  await pruneOldRows(q);
+}
+
 export async function clearLoginFailures(q: Q, ipHash: string): Promise<void> {
-  await q.delete(adminLoginAttempts).where(eq(adminLoginAttempts.ipHash, ipHash));
+  await q.delete(adminLoginAttempts).where(and(eq(adminLoginAttempts.ipHash, ipHash), eq(adminLoginAttempts.kind, "admin")));
+}
+
+/**
+ * Student sign-in can't fail (any name opens or creates an account), so every sign-in counts. The
+ * limit is generous because a whole class on campus Wi-Fi shares one network address.
+ */
+export const STUDENT_SIGNIN_WINDOW_MINUTES = 10;
+export const STUDENT_SIGNIN_MAX = 60;
+
+export async function studentSignInRetryAt(q: Q, ipHash: string, now = new Date()): Promise<Date | null> {
+  const rows = await recentRows(q, ipHash, "student", new Date(now.getTime() - STUDENT_SIGNIN_WINDOW_MINUTES * 60_000));
+  if (rows.length < STUDENT_SIGNIN_MAX) return null;
+  return new Date(rows[rows.length - STUDENT_SIGNIN_MAX].getTime() + STUDENT_SIGNIN_WINDOW_MINUTES * 60_000);
+}
+
+export async function recordStudentSignIn(q: Q, ipHash: string): Promise<void> {
+  await q.insert(adminLoginAttempts).values({ ipHash, kind: "student" });
+  await pruneOldRows(q);
 }
 
 // ---------------------------------------------------------------- class overview

@@ -1,13 +1,15 @@
-import { ArrowRight, BadgeCheck, CalendarDays, ChevronRight, CircleCheck, PartyPopper, RotateCcw, Trophy } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarDays, ChevronRight, CircleCheck, RotateCcw, Trophy } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DifficultyBadge, problemLabel, RatingPill } from "@/components/Badges";
+import { redirect } from "next/navigation";
+import { problemLabel, RatingPill } from "@/components/Badges";
 import { ProgressBar } from "@/components/Progress";
+import { TodayCard } from "@/components/session/TodayCard";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
-import { formatFullDate, formatLongDate, greeting, todayISO } from "@/lib/dates";
-import { dashboardStats, examCountdown, loadStudentState, recommend, sectionProgress } from "@/server/progress";
-import { getSettings } from "@/server/settings";
+import { formatFullDate, formatLongDate, greeting } from "@/lib/dates";
+import { loadStudentModel } from "@/server/model";
+import { dashboardStats, examCountdown, loadStudentState, sectionProgress } from "@/server/progress";
 import { PageTransition } from "@/components/PageTransition";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -21,11 +23,13 @@ function countdownText(days: number): string {
 
 export default async function DashboardPage() {
   const student = await requireStudent();
+  // First visit since the adaptive planner: set up a study schedule first.
+  if (!student.onboardedAt) redirect("/schedule?setup=1");
   const db = await getDb();
-  const today = todayISO();
-  const [state, settings] = await Promise.all([loadStudentState(db, student.id), getSettings(db)]);
+  const [state, loaded] = await Promise.all([loadStudentState(db, student.id), loadStudentModel(db, student)]);
+  const today = loaded.today;
+  const settings = { examName: loaded.examName, examDate: loaded.examDate };
   const stats = dashboardStats(state, today);
-  const rec = recommend(state, today);
   const progress = sectionProgress(state);
   const days = examCountdown(settings.examDate, today);
   const sectionTitle = (id: string) => state.sections.find((s) => s.id === id)?.title ?? id;
@@ -108,67 +112,7 @@ export default async function DashboardPage() {
         ) : null}
 
         <div className="dash-main">
-          <section className="card" aria-labelledby="next-title">
-            {rec.kind === "plan" || rec.kind === "easier" ? (
-              <div className="stack">
-                <div className="spread">
-                  <p className="eyebrow" style={{ margin: 0 }}>
-                    {rec.kind === "easier" ? "Recommended next: an easier problem on the same idea" : "Recommended next"}
-                  </p>
-                  <DifficultyBadge d={rec.difficulty} />
-                </div>
-                <div>
-                  <h2 id="next-title" className="continue-title">
-                    {stats.completed === 0 ? "Start Studying" : "Continue Studying"}
-                  </h2>
-                  <p className="text-2">
-                    {rec.sectionId} – {rec.sectionTitle}
-                    {rec.kind === "plan" ? ` · Problem ${rec.position} of ${rec.total}` : ""}
-                  </p>
-                </div>
-                <div className="stack-sm">
-                  <div className="spread small">
-                    <span className="text-2">Section progress</span>
-                    <span className="num">
-                      {rec.done} / {rec.total} ({rec.total ? Math.round((rec.done / rec.total) * 100) : 0}%)
-                    </span>
-                  </div>
-                  <ProgressBar value={rec.done} max={rec.total} label={`Section ${rec.sectionId} progress`} />
-                </div>
-                <Link className="btn btn-primary btn-block" href={rec.href}>
-                  {rec.kind === "easier" ? "Try the easier problem" : stats.completed === 0 ? "Start Studying" : "Continue Studying"}
-                  <ArrowRight size={18} aria-hidden="true" />
-                </Link>
-              </div>
-            ) : rec.kind === "review" ? (
-              <div className="stack">
-                <p className="eyebrow" style={{ margin: 0 }}>
-                  Recommended next
-                </p>
-                <h2 id="next-title" className="continue-title">
-                  Review what felt shaky
-                </h2>
-                <p className="text-2">
-                  Your study plan is complete. {rec.dueCount} review problem{rec.dueCount === 1 ? " is" : "s are"} due.
-                </p>
-                <Link className="btn btn-primary btn-block" href={rec.href}>
-                  Start review
-                  <ArrowRight size={18} aria-hidden="true" />
-                </Link>
-              </div>
-            ) : (
-              <div className="empty">
-                <span className="empty-icon" aria-hidden="true">
-                  <PartyPopper size={26} />
-                </span>
-                <h2 id="next-title">All caught up!</h2>
-                <p className="text-2">Your study plan is done and nothing is due right now. Check back tomorrow for review problems.</p>
-                <Link className="btn btn-secondary" href="/progress">
-                  See your progress
-                </Link>
-              </div>
-            )}
-          </section>
+          <TodayCard loaded={loaded} />
 
           <section className="card" aria-labelledby="recent-title">
             <h2 id="recent-title" className="card-title">

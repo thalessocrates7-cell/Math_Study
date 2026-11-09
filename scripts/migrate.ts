@@ -2,8 +2,9 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
-import { databaseUrl, failIfVercelWithoutDatabase, loadLocalEnv } from "./env";
+import { databaseUrl, failIfVercelWithoutDatabase, loadLocalEnv, skipOnPreview } from "./env";
 
+skipOnPreview("migrations");
 loadLocalEnv();
 const url = databaseUrl();
 failIfVercelWithoutDatabase(url);

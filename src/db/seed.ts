@@ -39,22 +39,22 @@ function toRow(p: ProblemSeed): typeof s.problems.$inferInsert {
     steps: p.steps,
     check: p.check,
     sort: p.sort,
+    source: p.openstax === null ? "original" : "openstax",
   };
 }
 
 /**
- * Idempotent seed: upserts sections, inserts any problems that are missing, and creates default plan
- * and settings rows. With force, also refreshes problems from content/ unless an admin edited them.
+ * Idempotent seed: upserts sections (unless an admin edited them), inserts any problems that are
+ * missing, and creates default plan and settings rows. With force, also refreshes problems from
+ * content/ unless an admin edited them.
  */
 export async function seedDatabase(db: DB, opts: { force?: boolean } = {}): Promise<{ inserted: number }> {
   for (const sec of SECTIONS) {
+    const values = { title: sec.title, objectives: sec.objectives, concepts: sec.concepts, sort: sec.sort, url: sec.url, kind: sec.kind };
     await db
       .insert(s.sections)
-      .values({ id: sec.id, title: sec.title, objectives: sec.objectives, concepts: sec.concepts, sort: sec.sort, url: sec.url })
-      .onConflictDoUpdate({
-        target: s.sections.id,
-        set: { title: sec.title, objectives: sec.objectives, concepts: sec.concepts, sort: sec.sort, url: sec.url },
-      });
+      .values({ id: sec.id, ...values })
+      .onConflictDoUpdate({ target: s.sections.id, set: values, setWhere: sql`${s.sections.editedByAdmin} = false` });
   }
 
   const rows = ALL_PROBLEMS.map(toRow);
@@ -91,7 +91,9 @@ export async function seedDatabase(db: DB, opts: { force?: boolean } = {}): Prom
     }
   }
 
+  // Legacy plan counts (the fixed 15-per-section plan), only for Exam 4 sections.
   for (const sec of SECTIONS) {
+    if (sec.kind !== "core") continue;
     const pool: Counts = { F: 0, C: 0, Ch: 0 };
     for (const p of ALL_PROBLEMS) if (p.section === sec.id) pool[p.difficulty]++;
     await db.insert(s.planConfig).values({ sectionId: sec.id, ...defaultPlanFor(pool) }).onConflictDoNothing();

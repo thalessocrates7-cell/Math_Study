@@ -3,7 +3,15 @@ import { and, eq } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
 import { createPgliteDb, type DB } from "../src/db/client";
 import { assignments, attempts, problems, reviewItems } from "../src/db/schema";
-import { classOverview, deleteProblem, studentDetail } from "../src/server/admin";
+import {
+  classOverview,
+  deleteProblem,
+  recentLoginFailures,
+  recordStudentSignIn,
+  STUDENT_SIGNIN_MAX,
+  studentDetail,
+  studentSignInRetryAt,
+} from "../src/server/admin";
 import { openAttempt, rateAttempt, recordAssist, saveNote, workspaceData } from "../src/server/practice";
 import { dashboardStats, loadStudentState, recommend, reviewGroups } from "../src/server/progress";
 import { findOrCreateStudent, mergeStudents } from "../src/server/students";
@@ -77,7 +85,7 @@ describe("student flow", () => {
     expect(out.nextHref).toMatch(/^\/practice\/4\.10-/);
   });
 
-  it("shows stats, queue groups and a 14-day Got It check", async () => {
+  it("shows stats and queue groups (Got it schedules nothing: look-backs check retention)", async () => {
     const { student } = await findOrCreateStudent(db, "Alice", "Smith");
     const state = await loadStudentState(db, student.id);
     const stats = dashboardStats(state, "2026-11-05");
@@ -85,7 +93,7 @@ describe("student flow", () => {
     expect(stats.toReview).toBe(1);
     const groups = reviewGroups(state, "2026-11-05");
     expect(groups.find((g) => g.key === "tomorrow")?.items.length).toBe(1);
-    expect(groups.find((g) => g.key === "later")?.items[0]?.dueDate).toBe("2026-11-19");
+    expect(groups.find((g) => g.key === "later")?.items).toHaveLength(0);
   });
 
   it("saves notes and shows them in the workspace", async () => {
@@ -119,6 +127,16 @@ describe("admin", () => {
     expect(p.active).toBe(false);
     const state = await loadStudentState(db, student.id);
     expect(state.assigned.filter((a) => a.sectionId === "4.10").length).toBe(15);
+  });
+
+  it("rate-limits student sign-ins per network, separately from the admin lockout", async () => {
+    const ip = "network-1";
+    for (let i = 0; i < STUDENT_SIGNIN_MAX - 1; i++) await recordStudentSignIn(db, ip);
+    expect(await studentSignInRetryAt(db, ip)).toBeNull();
+    await recordStudentSignIn(db, ip);
+    expect(await studentSignInRetryAt(db, ip)).not.toBeNull();
+    expect(await studentSignInRetryAt(db, "network-2")).toBeNull();
+    expect((await recentLoginFailures(db, ip)).count).toBe(0);
   });
 
   it("merges duplicate accounts", async () => {

@@ -9,7 +9,7 @@ import p57 from "./problems/5-7";
 import { SECTIONS } from "./sections";
 import type { ProblemSeed } from "./types";
 
-export { SECTIONS } from "./sections";
+export { CORE_SECTIONS, SECTIONS } from "./sections";
 export * from "./types";
 
 export const ALL_PROBLEMS: ProblemSeed[] = [...p410, ...p51, ...p52, ...p53, ...p54, ...p55, ...p56, ...p57];

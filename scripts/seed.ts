@@ -8,8 +8,9 @@ import pg from "pg";
 import type { DB } from "../src/db/client";
 import * as schema from "../src/db/schema";
 import { seedDatabase } from "../src/db/seed";
-import { databaseUrl, failIfVercelWithoutDatabase, loadLocalEnv } from "./env";
+import { databaseUrl, failIfVercelWithoutDatabase, loadLocalEnv, skipOnPreview } from "./env";
 
+skipOnPreview("the seed");
 loadLocalEnv();
 const url = databaseUrl();
 failIfVercelWithoutDatabase(url);

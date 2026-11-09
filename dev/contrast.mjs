@@ -53,6 +53,11 @@ const pairs = [
   ["chart-accent", "surface", UI],
   // Active-nav marker drawn on the active item's pill.
   ["chart-accent", "accent-soft", UI],
+  // Study sessions: "Keep going" pills and step numbers, the timer total, the Paused icon.
+  ["text-2", "sunken", TEXT],
+  ["text", "sunken", TEXT],
+  ["success-text", "sunken", UI],
+  ["accent-text", "surface-2", UI],
 ];
 
 let failures = 0;

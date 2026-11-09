@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import type { Difficulty } from "../../content/types";
 import type { Q } from "../db/client";
-import { assignments, attempts, planConfig, problems, sections } from "../db/schema";
+import { assignments, attempts, planConfig, problems } from "../db/schema";
 import { seededShuffle } from "../lib/random";
 
 export type PlanCounts = { foundation: number; core: number; challenge: number };
@@ -98,7 +98,8 @@ export async function ensureAssignments(q: Q, studentId: string): Promise<void> 
       .from(assignments)
       .innerJoin(problems, eq(problems.id, assignments.problemId))
       .where(eq(assignments.studentId, studentId)),
-    q.select({ id: sections.id }).from(sections),
+    // Only sections with plan counts (Exam 4 sections) get a fixed plan; supplementary ones never do.
+    q.select({ id: planConfig.sectionId }).from(planConfig),
   ]);
   const bySection = new Map<string, { problemId: string; active: boolean }[]>();
   for (const r of rows) {

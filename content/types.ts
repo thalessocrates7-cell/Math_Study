@@ -78,13 +78,23 @@ export type ProblemSeed = {
   sort: number;
 };
 
-export type SectionId = "4.10" | "5.1" | "5.2" | "5.3" | "5.4" | "5.5" | "5.6" | "5.7";
+export type SectionId = "4.1" | "4.2" | "4.10" | "5.1" | "5.2" | "5.3" | "5.4" | "5.5" | "5.6" | "5.7";
+
+/** Core sections are on Exam 4. Supplementary sections are optional extra practice and never count toward it. */
+export type SectionKind = "core" | "supplementary";
+
+/**
+ * A skill (concept tag). `prerequisites` are skills it builds on, written "section:skill"
+ * (e.g. "4.10:power-rule"). The planner uses them to decide which earlier units come back sooner.
+ */
+export type ConceptSeed = { id: string; label: string; prerequisites?: string[] };
 
 export type SectionSeed = {
   id: SectionId;
   title: string;
+  kind: SectionKind;
   objectives: string[];
-  concepts: Array<{ id: string; label: string }>;
+  concepts: ConceptSeed[];
   sort: number;
   url: string;
 };

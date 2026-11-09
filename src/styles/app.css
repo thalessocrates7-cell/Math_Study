@@ -2694,6 +2694,372 @@ details.table-view summary {
   background: var(--surface-2);
 }
 
+/* ============================================================ study sessions and schedule */
+/* Track pills: always an icon and the track's name (color is never the only cue). */
+.track-new {
+  background: var(--accent-soft);
+  color: var(--accent-soft-text);
+}
+
+.track-challenge {
+  background: var(--diff-ch-soft);
+  color: var(--diff-ch);
+}
+
+.track-reinforcement {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.track-lookback {
+  background: var(--diff-f-soft);
+  color: var(--diff-f);
+}
+
+.track-extra {
+  background: var(--sunken);
+  color: var(--text-2);
+}
+
+.empty-icon.tone-accent {
+  background: var(--accent-soft);
+  color: var(--accent-soft-text);
+}
+
+.session-hero,
+.today-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.session-hero .eyebrow,
+.today-card .eyebrow {
+  margin: 0;
+}
+
+.session-hero h2,
+.today-card h2 {
+  text-wrap: balance;
+}
+
+.session-hero > p,
+.today-card > p {
+  text-wrap: pretty;
+}
+
+.hero-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.time-choices {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  max-width: 440px;
+}
+
+.disclosure summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  border-radius: 4px;
+  color: var(--accent-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.disclosure summary:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.disclosure[open] summary {
+  margin-bottom: var(--space-2);
+}
+
+/* Session item rows */
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.session-item > .row-link {
+  flex: 1;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.row-static,
+.row-static:hover {
+  background: transparent;
+  cursor: default;
+}
+
+.item-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.st-num {
+  background: var(--sunken);
+  color: var(--text-2);
+}
+
+.st-pending,
+.st-muted {
+  color: var(--muted);
+}
+
+.st-active {
+  color: var(--accent-text);
+}
+
+.st-done {
+  color: var(--success-icon);
+}
+
+.item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.item-reason {
+  font-size: var(--text-sm);
+  text-wrap: pretty;
+}
+
+.session-item.is-done .item-reason,
+.session-item.is-muted .item-reason {
+  color: var(--text-2);
+}
+
+/* Dashboard card */
+.today-peek {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.today-peek li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px var(--space-2);
+}
+
+.today-peek .small {
+  flex: 1 1 200px;
+  text-wrap: pretty;
+}
+
+.today-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Practice: tag row, Pause, and why this problem */
+.ws-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.ws-pause {
+  margin-left: auto;
+}
+
+.paused-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  animation: rise var(--dur-normal) var(--ease-enter);
+}
+
+.paused-panel > svg {
+  flex: none;
+  color: var(--accent-text);
+}
+
+.why {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.why p {
+  flex: 1 1 260px;
+  margin: 0;
+  color: var(--text-2);
+  text-wrap: pretty;
+}
+
+.why-skip {
+  margin-left: auto;
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+/* Schedule form: day chips are real checkboxes; a chosen day is filled, not just tinted. */
+.day-chips {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 520px;
+}
+
+.day-chip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  cursor: pointer;
+  user-select: none;
+  transition-property: background-color, border-color, color, transform;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease);
+}
+
+.day-chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.day-chip:hover {
+  background: var(--surface-2);
+}
+
+.day-chip:active {
+  transform: scale(0.97);
+}
+
+.day-chip:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.day-chip:has(input:checked):hover {
+  background: var(--accent-hover);
+}
+
+.day-chip:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  max-width: 420px;
+}
+
+.day-table-wrap {
+  overflow-x: auto;
+}
+
+.day-table {
+  max-width: 520px;
+}
+
+.day-table th[scope="row"] {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.day-table td {
+  padding: var(--space-2);
+}
+
+.day-table .select {
+  min-width: 96px;
+}
+
+.schedule-total {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--sunken);
+  font-size: var(--text-sm);
+}
+
+.schedule-total svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--success-text);
+}
+
+.upgrade-note {
+  margin-bottom: var(--space-5);
+}
+
+.upgrade-note ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+@media (max-width: 519px) {
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
 /* ============================================================ loading placeholders */
 .skeleton {
   background: var(--sunken);
@@ -2823,6 +3189,12 @@ details.table-view summary {
   .tab-indicator {
     forced-color-adjust: none;
     background: Highlight;
+  }
+  .day-chip:has(input:checked) {
+    forced-color-adjust: none;
+    border-color: Highlight;
+    background: Highlight;
+    color: HighlightText;
   }
 }
 

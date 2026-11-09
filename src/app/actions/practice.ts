@@ -13,18 +13,21 @@ import {
   type AttemptState,
   type RateOutcome,
 } from "@/server/practice";
+import { setSessionPaused } from "@/server/sessions";
 
 const ID_RE = /^[0-9]+\.[0-9]+-[A-Za-z0-9]+$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuidOrNull = (v: string | null | undefined) => (v && UUID_RE.test(v) ? v : null);
 
-export async function openAttemptAction(problemId: string, itemId: string | null): Promise<AttemptState | null> {
+export async function openAttemptAction(problemId: string, itemId: string | null, sessionItemId: string | null = null): Promise<AttemptState | null> {
   const student = await requireStudent();
   if (!ID_RE.test(problemId)) return null;
   const db = await getDb();
   try {
     return await openAttempt(db, student.id, problemId, {
       origin: itemId ? "review" : "plan",
-      reviewItemId: itemId && UUID_RE.test(itemId) ? itemId : null,
+      reviewItemId: uuidOrNull(itemId),
+      sessionItemId: uuidOrNull(sessionItemId),
     });
   } catch (err) {
     if (err instanceof PracticeError) return null;
@@ -39,12 +42,13 @@ export async function assistAction(attemptId: string, kind: AssistKind, hintsSho
   await recordAssist(db, student.id, attemptId, kind, Number.isFinite(hintsShown) ? hintsShown : 1);
 }
 
-export async function rateAction(attemptId: string, rating: "got_it" | "shaky" | "lost"): Promise<RateOutcome | { error: string }> {
+/** `seconds` is the on-screen time not yet saved (the rest arrives through /api/time). */
+export async function rateAction(attemptId: string, rating: "got_it" | "shaky" | "lost", seconds = 0): Promise<RateOutcome | { error: string }> {
   const student = await requireStudent();
   if (!UUID_RE.test(attemptId) || !["got_it", "shaky", "lost"].includes(rating)) return { error: "That rating could not be saved." };
   const db = await getDb();
   try {
-    const out = await rateAttempt(db, student.id, attemptId, rating);
+    const out = await rateAttempt(db, student.id, attemptId, rating, new Date(), { seconds: Number(seconds) || 0 });
     revalidatePath("/", "layout");
     return out;
   } catch (err) {
@@ -59,4 +63,12 @@ export async function saveNoteAction(problemId: string, text: string): Promise<{
   const db = await getDb();
   await saveNote(db, student.id, problemId, text);
   return { ok: true };
+}
+
+/** The workspace's Pause / Resume (the timer runs in the browser; this is what the dashboard shows). */
+export async function pauseSessionAction(sessionId: string, paused: boolean): Promise<void> {
+  const student = await requireStudent();
+  if (!UUID_RE.test(sessionId)) return;
+  const db = await getDb();
+  await setSessionPaused(db, student.id, sessionId, paused === true);
 }

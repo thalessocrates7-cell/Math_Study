@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, BookOpenCheck, Check, ChevronDown, Eye, Info, Lightbulb, WavesHorizontal, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenCheck, Check, ChevronDown, Eye, Info, Lightbulb, Pause, Play, WavesHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { assistAction, openAttemptAction, rateAction } from "@/app/actions/practice";
+import { assistAction, openAttemptAction, pauseSessionAction, rateAction } from "@/app/actions/practice";
 import type { AttemptState, RateOutcome } from "@/server/practice";
 import { NotesBox } from "./NotesBox";
+import { useQuietTimer } from "./useQuietTimer";
 
 type Rating = "got_it" | "shaky" | "lost";
 
@@ -18,6 +19,11 @@ const RATINGS: Array<{ value: Rating; label: string; sub: string; Icon: typeof C
 export type WorkspaceProps = {
   problemId: string;
   itemId: string | null;
+  /** Set when the problem was opened from today's study session. */
+  sessionItemId: string | null;
+  sessionId: string | null;
+  /** This student's estimated minutes, shown quietly next to the tag. */
+  estimateMinutes: number | null;
   tag: string;
   statementHtml: string;
   figure: React.ReactNode;
@@ -34,7 +40,7 @@ function Html({ html, className = "rich" }: { html: string; className?: string }
 }
 
 export function Workspace(props: WorkspaceProps) {
-  const { problemId, itemId, hintsHtml, steps } = props;
+  const { problemId, itemId, sessionItemId, sessionId, hintsHtml, steps } = props;
   const attemptPromise = useRef<Promise<AttemptState | null> | null>(null);
   const [attempt, setAttempt] = useState<AttemptState | null>(null);
   const [startError, setStartError] = useState(false);
@@ -59,10 +65,31 @@ export function Workspace(props: WorkspaceProps) {
   const [rateError, setRateError] = useState<string | null>(null);
   const continueRef = useRef<HTMLAnchorElement>(null);
 
+  // The quiet timer counts on-screen time only: not while paused, hidden, or once rated.
+  const [paused, setPaused] = useState(false);
+  const pauseRef = useRef<HTMLButtonElement>(null);
+  const resumeRef = useRef<HTMLButtonElement>(null);
+  const focusAfterToggle = useRef(false);
+  const open = !!attempt && !attempt.rating && !outcome;
+  const timer = useQuietTimer(attempt?.id ?? null, open && !paused && !pending);
+
+  useEffect(() => {
+    if (!focusAfterToggle.current) return;
+    focusAfterToggle.current = false;
+    (paused ? resumeRef : pauseRef).current?.focus();
+  }, [paused]);
+
+  function togglePause(next: boolean) {
+    focusAfterToggle.current = true;
+    setPaused(next);
+    setAnnounce(next ? "Paused. Your time isn't counting." : "Resumed.");
+    if (sessionId) pauseSessionAction(sessionId, next).catch(() => undefined);
+  }
+
   // Open (or resume) the attempt for this visit. Safe to call twice: the server reuses the open attempt.
   useEffect(() => {
     let alive = true;
-    const p = openAttemptAction(problemId, itemId);
+    const p = openAttemptAction(problemId, itemId, sessionItemId);
     attemptPromise.current = p;
     p.then((a) => {
       if (!alive) return;
@@ -78,7 +105,7 @@ export function Workspace(props: WorkspaceProps) {
     return () => {
       alive = false;
     };
-  }, [problemId, itemId, hintsHtml.length]);
+  }, [problemId, itemId, sessionItemId, hintsHtml.length]);
 
   useEffect(() => {
     if (outcome) continueRef.current?.focus();
@@ -139,20 +166,26 @@ export function Workspace(props: WorkspaceProps) {
 
   async function rate(value: Rating) {
     if (pending || outcome) return;
+    const seconds = timer.stopAndTake();
     setPending(value);
     setRateError(null);
+    let saved = false;
     try {
       const a = await attemptPromise.current;
       if (!a) {
         setRateError("This problem couldn't be started. Reload the page and try again.");
         return;
       }
-      const res = await rateAction(a.id, value);
+      const res = await rateAction(a.id, value, seconds);
       if ("error" in res) setRateError(res.error);
-      else setOutcome(res);
+      else {
+        saved = true;
+        setOutcome(res);
+      }
     } catch {
       setRateError("Your rating wasn't saved. Check your connection and try again.");
     } finally {
+      if (!saved) timer.giveBack(seconds);
       setPending(null);
     }
   }
@@ -162,9 +195,29 @@ export function Workspace(props: WorkspaceProps) {
   return (
     <div className="ws">
       <section className="card" aria-labelledby="problem-heading">
-        <div className="cluster" style={{ marginBottom: 12 }}>
+        <div className="ws-top">
           <span className="pill pill-accent">{props.tag}</span>
+          {props.estimateMinutes ? <span className="xsmall muted num">About {props.estimateMinutes} min</span> : null}
+          {open && !paused ? (
+            <button ref={pauseRef} type="button" className="btn btn-ghost btn-sm ws-pause" onClick={() => togglePause(true)}>
+              <Pause size={16} aria-hidden="true" />
+              Pause
+            </button>
+          ) : null}
         </div>
+        {open && paused ? (
+          <div className="paused-panel">
+            <Pause size={18} aria-hidden="true" />
+            <div className="row-main">
+              <strong>Paused</strong>
+              <span className="small text-2">Your time isn&apos;t counting. Pick up where you left off when you&apos;re ready.</span>
+            </div>
+            <button ref={resumeRef} type="button" className="btn btn-primary btn-sm" onClick={() => togglePause(false)}>
+              <Play size={16} aria-hidden="true" />
+              Resume
+            </button>
+          </div>
+        ) : null}
         <h2 id="problem-heading" className="sr-only">
           Problem
         </h2>
@@ -262,7 +315,11 @@ export function Workspace(props: WorkspaceProps) {
                 {outcome.nextLabel}
                 <ArrowRight size={18} aria-hidden="true" />
               </Link>
-              {outcome.rating !== "got_it" ? (
+              {sessionItemId && outcome.nextHref !== "/session" ? (
+                <Link className="btn btn-ghost" href="/session">
+                  Today&apos;s session
+                </Link>
+              ) : !sessionItemId && outcome.rating !== "got_it" ? (
                 <Link className="btn btn-ghost" href="/review">
                   View review queue
                 </Link>

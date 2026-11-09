@@ -55,7 +55,12 @@ export type StudentState = {
 export async function loadStudentState(q: Q, studentId: string): Promise<StudentState> {
   await ensureAssignments(q, studentId);
   const [secs, assigned, rated, pending] = await Promise.all([
-    q.select({ id: sections.id, title: sections.title, objectives: sections.objectives, sort: sections.sort }).from(sections).orderBy(asc(sections.sort)),
+    q
+      .select({ id: sections.id, title: sections.title, objectives: sections.objectives, sort: sections.sort })
+      .from(sections)
+      // The supplementary sections (4.1, 4.2) aren't on Exam 4, so they stay out of these lists.
+      .where(eq(sections.kind, "core"))
+      .orderBy(asc(sections.sort)),
     q
       .select({
         problemId: assignments.problemId,
