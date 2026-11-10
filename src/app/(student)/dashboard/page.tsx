@@ -8,7 +8,9 @@ import { TodayCard } from "@/components/session/TodayCard";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
 import { formatFullDate, formatLongDate, greeting } from "@/lib/dates";
+import { loadChecks } from "@/server/checklist";
 import { loadStudentModel } from "@/server/model";
+import { defaultSection, planHref } from "@/lib/checklist";
 import { dashboardStats, examCountdown, loadStudentState, sectionProgress } from "@/server/progress";
 import { PageTransition } from "@/components/PageTransition";
 
@@ -26,7 +28,7 @@ export default async function DashboardPage() {
   // First visit since the adaptive planner: set up a study schedule first.
   if (!student.onboardedAt) redirect("/schedule?setup=1");
   const db = await getDb();
-  const [state, loaded] = await Promise.all([loadStudentState(db, student.id), loadStudentModel(db, student)]);
+  const [state, loaded, checked] = await Promise.all([loadStudentState(db, student.id), loadStudentModel(db, student), loadChecks(db, student.id)]);
   const today = loaded.today;
   const settings = { examName: loaded.examName, examDate: loaded.examDate };
   const stats = dashboardStats(state, today);
@@ -34,7 +36,15 @@ export default async function DashboardPage() {
   const days = examCountdown(settings.examDate, today);
   const sectionTitle = (id: string) => state.sections.find((s) => s.id === id)?.title ?? id;
   const recent = state.rated.slice(0, 5);
-  const totalPlanned = progress.reduce((m, p) => m + p.total, 0);
+  // The Study Plan's ticks, over every active problem of each Exam 4 section (the same rule as the Study Plan page).
+  const rows = progress.map((p) => {
+    const list = loaded.problems.filter((x) => x.active && x.sectionId === p.section.id);
+    const done = list.filter((x) => checked.has(x.id)).length;
+    return { section: p.section, mastered: p.mastered, done, total: list.length, percent: list.length ? Math.round((done / list.length) * 100) : 0 };
+  });
+  const totalPlanned = rows.reduce((m, r) => m + r.total, 0);
+  const totalDone = rows.reduce((m, r) => m + r.done, 0);
+  const planAt = planHref(defaultSection(rows.map((r) => r.section.id), loaded.model.plan.currentUnitId) ?? "4.10", "core");
 
   return (
     <PageTransition>
@@ -79,7 +89,7 @@ export default async function DashboardPage() {
               <span className="stat-icon tone-success" aria-hidden="true">
                 <CircleCheck size={20} />
               </span>
-              <span className="stat-value">{stats.completed}</span>
+              <span className="stat-value">{totalDone}</span>
               <span className="stat-label">Completed</span>
             </Link>
             <Link className="stat-tile" href="/progress">
@@ -146,18 +156,18 @@ export default async function DashboardPage() {
             <h2 id="plan-progress-title" className="card-title">
               Study Plan Progress
             </h2>
-            <Link className="card-link" href="/plan">
+            <Link className="card-link" href={planAt}>
               View all <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
           <p className="small text-2" style={{ marginBottom: 16 }}>
-            {stats.completed} of {totalPlanned} planned problems rated. Problems you rate Got it come back later to check that they stuck.
+            {totalDone} of {totalPlanned} problems done. Rating a problem ticks it, and you can tick ones you did on paper in the Study Plan.
           </p>
           <ul className="list">
-            {progress.map((p) => (
+            {rows.map((p) => (
               <li key={p.section.id} style={{ padding: "12px 0" }}>
                 <div className="progress-row">
-                  <Link href={`/plan/${p.section.id}`} className="small" style={{ fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>
+                  <Link href={planHref(p.section.id, "core")} className="small" style={{ fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>
                     {p.mastered ? (
                       <>
                         <BadgeCheck size={16} aria-hidden="true" style={{ display: "inline", verticalAlign: "-3px", marginRight: 6, color: "var(--success-icon)" }} />

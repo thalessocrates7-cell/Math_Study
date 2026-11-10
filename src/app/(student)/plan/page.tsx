@@ -1,22 +1,47 @@
-import { ArrowRight, BadgeCheck } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { DIFFICULTY_BLURB, DIFFICULTY_LABEL, DIFFICULTIES } from "@content/types";
-import { DifficultyBadge } from "@/components/Badges";
-import { ProgressBar } from "@/components/Progress";
+import { problemLabel } from "@/components/Badges";
+import { PageTransition } from "@/components/PageTransition";
+import { StudyPlanView, type PlanProblem } from "@/components/plan/StudyPlanView";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
-import { loadStudentState, sectionProgress } from "@/server/progress";
-import { getSettings } from "@/server/settings";
-import { PageTransition } from "@/components/PageTransition";
+import { defaultSection, parseLevel } from "@/lib/checklist";
+import { loadChecks } from "@/server/checklist";
+import { loadStudentModel } from "@/server/model";
 
 export const metadata: Metadata = { title: "Study Plan" };
 
-export default async function PlanPage() {
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+export default async function PlanPage({ searchParams }: Props) {
   const student = await requireStudent();
+  const sp = await searchParams;
   const db = await getDb();
-  const [state, settings] = await Promise.all([loadStudentState(db, student.id), getSettings(db)]);
-  const progress = sectionProgress(state);
+  const [loaded, checked] = await Promise.all([loadStudentModel(db, student), loadChecks(db, student.id)]);
+
+  const withProblems = new Set(loaded.problems.filter((p) => p.active).map((p) => p.sectionId));
+  // Exam 4 sections, plus the extra ones only for students who opted in, and only once they have problems.
+  const sections = loaded.sections
+    .filter((s) => withProblems.has(s.id) && (s.kind === "core" || student.supplementaryOptIn))
+    .map((s) => ({ id: s.id, title: s.title, objective: s.objectives[0] ?? "" }));
+  const planProblems: PlanProblem[] = loaded.problems
+    .filter((p) => p.active)
+    .map((p) => ({
+      id: p.id,
+      sectionId: p.sectionId,
+      difficulty: p.difficulty,
+      sort: p.sort,
+      active: p.active,
+      label: problemLabel(p.openstaxNumber, p.id),
+      rating: (() => {
+        const r = loaded.model.state.problems.get(p.id)?.latest;
+        return r === "got_it" || r === "shaky" || r === "lost" ? r : null;
+      })(),
+    }));
+
+  const wanted = typeof sp.section === "string" ? sp.section : null;
+  const ids = sections.map((s) => s.id);
+  const initialSection = wanted && ids.includes(wanted) ? wanted : defaultSection(ids, loaded.model.plan.currentUnitId);
+  const initialLevel = parseLevel(sp.level) ?? parseLevel(sp.d) ?? "core";
 
   return (
     <PageTransition>
@@ -24,67 +49,14 @@ export default async function PlanPage() {
         <header className="page-header">
           <div>
             <h1>Study Plan</h1>
-            <p className="lede">Your organized roadmap for {settings.examName}, in study order.</p>
+            <p className="lede">Your organized roadmap for {loaded.examName}, in study order.</p>
           </div>
         </header>
-
-        <section className="card" aria-labelledby="legend-title" style={{ marginBottom: 16 }}>
-          <h2 id="legend-title" className="sr-only">
-            Difficulty levels
-          </h2>
-          <ul className="cluster" style={{ listStyle: "none", margin: 0, padding: 0, gap: "8px 20px" }}>
-            {DIFFICULTIES.map((d) => (
-              <li key={d} className="cluster small text-2">
-                <DifficultyBadge d={d} />
-                <span>{DIFFICULTY_BLURB[d]}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <ol className="plan-list">
-          {progress.map((p) => {
-            const label = p.done === 0 ? "Start" : p.nextProblemId ? "Continue" : "Review";
-            const href = p.nextProblemId ? `/practice/${encodeURIComponent(p.nextProblemId)}` : `/plan/${p.section.id}`;
-            return (
-              <li key={p.section.id} className="card plan-card">
-                <div className="stack-sm">
-                  <div className="cluster">
-                    <h2>
-                      <Link href={`/plan/${p.section.id}`}>
-                        {p.section.id} – {p.section.title}
-                      </Link>
-                    </h2>
-                    {p.mastered ? (
-                      <span className="pill pill-success">
-                        <BadgeCheck size={13} aria-hidden="true" />
-                        Mastered
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="small text-2">{p.section.objectives[0]}</p>
-                  <p className="xsmall muted">
-                    {p.total} problems: {DIFFICULTIES.map((d) => `${p.counts[d]} ${DIFFICULTY_LABEL[d]}`).join(" · ")}
-                  </p>
-                </div>
-                <div className="stack-sm">
-                  <div className="spread small">
-                    <span className="text-2 num">
-                      {p.done}/{p.total} done
-                    </span>
-                    <span className="num">{p.percent}%</span>
-                  </div>
-                  <ProgressBar value={p.done} max={p.total} label={`${p.section.id} progress`} />
-                </div>
-                <Link className={p.done === 0 && p.section.id === progress.find((x) => x.nextProblemId)?.section.id ? "btn btn-primary" : "btn btn-secondary"} href={href}>
-                  {label}
-                  <span className="sr-only"> section {p.section.id}</span>
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
+        {initialSection ? (
+          <StudyPlanView sections={sections} problems={planProblems} checked={[...checked]} initialSection={initialSection} initialLevel={initialLevel} />
+        ) : (
+          <p className="small text-2">No problems are available yet.</p>
+        )}
       </div>
     </PageTransition>
   );

@@ -42,6 +42,8 @@ export type BuildContext = {
   reviews: EngineReview[];
   rules: Rules;
   seed: string;
+  /** Problems ticked on the Study Plan: chosen last for new work (a tick is not a rating). */
+  ticked?: ReadonlySet<string>;
   personal: (problemId: string) => number;
   /** This student's minutes for a typical problem at each level. */
   levelMinutes: Record<Difficulty, number>;
@@ -54,6 +56,8 @@ function pendingProblemIds(ctx: BuildContext): Set<string> {
 }
 
 const ratedCount = (ctx: BuildContext, id: string) => ctx.state.problems.get(id)?.ratedCount ?? 0;
+/** Subtracted from a pick's score so ticked-but-never-rated problems rank last, yet stay available. */
+const tickPenalty = (ctx: BuildContext, id: string) => (ctx.ticked?.has(id) ? 1000 : 0);
 
 /** Weight of covering a skill again: uncovered skills count most, demonstrated ones barely. */
 function skillWeight(s: SkillStatus | undefined, coveredNow: ReadonlySet<string>): number {
@@ -94,7 +98,7 @@ function bestNewProblem(
       }
     }
     const open = ctx.state.problems.get(p.id)?.opened ? 10 : 0;
-    const score = value / minutes + open;
+    const score = value / minutes + open - tickPenalty(ctx, p.id);
     const tie = hashString(`${ctx.seed}:new:${p.id}`);
     if (!best || score > best.score || (score === best.score && tie < best.tie)) best = { problem: p, topSkill, score, tie };
   }
@@ -136,7 +140,7 @@ export function pickNewLearning(ctx: BuildContext, maxMinutes: number, taken: Se
           skill ??= st.key;
         }
         if (!skill) continue;
-        const score = value / minutes;
+        const score = value / minutes - tickPenalty(ctx, p.id);
         const tie = hashString(`${ctx.seed}:new:${p.id}`);
         if (!best || score > best.score || (score === best.score && tie < best.tie)) best = { p, skill, score, tie };
       }
@@ -251,7 +255,7 @@ export function pickDailyChallenge(ctx: BuildContext, taken: ReadonlySet<string>
           !pending.has(p.id) &&
           ratedCount(ctx, p.id) === 0,
       )
-      .sort((a, b) => hashString(`${ctx.seed}:ch:${a.id}`) - hashString(`${ctx.seed}:ch:${b.id}`))[0] ?? null;
+      .sort((a, b) => tickPenalty(ctx, a.id) - tickPenalty(ctx, b.id) || hashString(`${ctx.seed}:ch:${a.id}`) - hashString(`${ctx.seed}:ch:${b.id}`))[0] ?? null;
   const item = (p: EngineProblem, reason: Reason): PlannedItem => ({ track: "challenge", problemId: p.id, reviewItemId: null, reason, minutes: ctx.personal(p.id), essential: true });
 
   const tried = new Set<string>();
@@ -352,6 +356,7 @@ export function buildSession(ctx: BuildContext, opts: { sessionMinutes: number; 
       personal: ctx.personal,
       maxMinutes: Math.min(lookbackMax, Math.max(0, limit - used - newReserve - lookbackItems.reduce((m, i) => m + i.minutes, 0))),
       taken,
+      ticked: ctx.ticked,
     });
     if (!pick) continue;
     const reason: Reason = pick.retentionDay && !u.bridge && !u.final ? { code: "lookback_retention", params: { day: pick.retentionDay, unit: u.unitId } } : u.reason;
@@ -452,6 +457,7 @@ export function keepGoingOptions(ctx: BuildContext, alreadyTaken: ReadonlySet<st
       personal: ctx.personal,
       maxMinutes: Number.POSITIVE_INFINITY,
       taken,
+      ticked: ctx.ticked,
     });
     if (pick) out.push({ track: "lookback", problemId: pick.problemId, reviewItemId: null, reason: { code: "extra_lookback", params: { unit: next.unitId } }, minutes: pick.minutes, essential: false });
   }

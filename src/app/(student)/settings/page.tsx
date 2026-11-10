@@ -86,7 +86,7 @@ export default async function SettingsPage() {
             </h2>
             <p className="small text-2">
               This site stores only your name, your study schedule and your study progress (which problems you opened, how long each one was
-              on screen, whether you used a hint, the answer or the worked solution, your ratings, and your notes). Your instructor can see your progress. There is no email, password or tracking.
+              on screen, whether you used a hint, the answer or the worked solution, your ratings, which problems you ticked off, and your notes). Your instructor can see your progress. There is no email, password or tracking.
             </p>
           </section>
           <section className="card" aria-labelledby="signout-title">

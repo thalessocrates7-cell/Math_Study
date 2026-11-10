@@ -1,6 +1,6 @@
 import { and, count, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { DB, Q } from "../db/client";
-import { assignments, attempts, notes, reviewItems, students, type Student } from "../db/schema";
+import { assignments, attempts, notes, problemChecks, reviewItems, students, type Student } from "../db/schema";
 import { nameKey, normalizeName } from "../lib/names";
 import type { ScheduleValue } from "../lib/schedule";
 import { ensureAssignments } from "./plan";
@@ -111,6 +111,15 @@ export async function mergeStudents(db: DB, sourceId: string, targetId: string):
       }
     }
     await tx.delete(notes).where(eq(notes.studentId, sourceId));
+    // Ticks move across; the target keeps its own where both ticked the same problem.
+    const sourceChecks = await tx.select().from(problemChecks).where(eq(problemChecks.studentId, sourceId));
+    if (sourceChecks.length > 0) {
+      await tx
+        .insert(problemChecks)
+        .values(sourceChecks.map((c) => ({ studentId: targetId, problemId: c.problemId, checkedAt: c.checkedAt })))
+        .onConflictDoNothing();
+    }
+    await tx.delete(problemChecks).where(eq(problemChecks.studentId, sourceId));
     await tx.delete(assignments).where(eq(assignments.studentId, sourceId));
     await tx.delete(students).where(eq(students.id, sourceId));
   });

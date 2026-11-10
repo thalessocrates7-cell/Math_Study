@@ -12,6 +12,7 @@ import { ProgressBar } from "@/components/Progress";
 import { TrackPill } from "@/components/session/SessionParts";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
+import { difficultyToLevel, planHref } from "@/lib/checklist";
 import { formatMonthDay } from "@/lib/dates";
 import { renderRich } from "@/lib/tex";
 import { type HistoryRow, problemHistory, workspaceData } from "@/server/practice";
@@ -63,7 +64,7 @@ export default async function PracticePage({ params, searchParams }: Props) {
       ? `Problem ${bar.index} of ${bar.total} · ${label}`
       : `Extra practice · ${label}`
     : data.position
-      ? `Problem ${data.position} · ${label}`
+      ? `${DIFFICULTY_LABEL[problem.difficulty]} ${data.position} · ${label}`
       : `Extra practice · ${label}`;
 
   const asideTop = (
@@ -144,7 +145,8 @@ export default async function PracticePage({ params, searchParams }: Props) {
     </>
   );
 
-  const crumb = bar ? { href: "/session", text: "Today's Session" } : data.reviewItem ? { href: "/review", text: "Review Queue" } : { href: "/plan", text: "Study Plan" };
+  const planLink = planHref(section.id, difficultyToLevel(problem.difficulty));
+  const crumb = bar ? { href: "/session", text: "Today's Session" } : data.reviewItem ? { href: "/review", text: "Review Queue" } : { href: planLink, text: "Study Plan" };
 
   return (
     <PageTransition>
@@ -155,7 +157,7 @@ export default async function PracticePage({ params, searchParams }: Props) {
               <Link href={crumb.href}>{crumb.text}</Link>
             </li>
             <li>
-              <Link href={`/plan/${section.id}`}>{`${section.id} ${section.title}`}</Link>
+              <Link href={planLink}>{`${section.id} ${section.title}`}</Link>
             </li>
             <li aria-current="page">Practice</li>
           </ol>
@@ -199,11 +201,11 @@ export default async function PracticePage({ params, searchParams }: Props) {
           <div className="ws-progress">
             <div className="spread small">
               <span style={{ fontWeight: 600 }}>
-                Question {data.position} of {data.total}
+                {DIFFICULTY_LABEL[problem.difficulty]} {data.position} of {data.total}
               </span>
               <span className="text-2 num">{pct}% complete</span>
             </div>
-            <ProgressBar value={data.done} max={data.total} label={`Section ${section.id} progress`} />
+            <ProgressBar value={data.done} max={data.total} label={`Section ${section.id} ${DIFFICULTY_LABEL[problem.difficulty]} progress`} />
           </div>
         ) : null}
         {!problem.active ? (

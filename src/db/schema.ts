@@ -183,6 +183,17 @@ export const notes = pgTable(
   (t) => [primaryKey({ columns: [t.studentId, t.problemId] })],
 );
 
+/** The Study Plan checkboxes: a problem a student has marked done (by hand, or by rating it). */
+export const problemChecks = pgTable(
+  "problem_checks",
+  {
+    studentId: uuid("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    problemId: text("problem_id").notNull().references(() => problems.id),
+    checkedAt: timestamp("checked_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.studentId, t.problemId] })],
+);
+
 export type SessionSnapshot = {
   pacing: "ahead" | "on_track" | "tight" | "behind";
   challengeMode: "daily" | "bonus";

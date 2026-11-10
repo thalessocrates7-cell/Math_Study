@@ -3,7 +3,7 @@ import Link from "next/link";
 import { signOut } from "@/app/actions/auth";
 import { Brand } from "@/components/Brand";
 import { SidebarNav, TabBar, type NavItem } from "@/components/NavLinks";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeSwitch, ThemeToggle } from "@/components/ThemeToggle";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
@@ -20,8 +20,8 @@ export default async function StudentLayout({ children }: { children: React.Reac
     { href: "/plan", label: "Study Plan", short: "Plan", icon: "plan", also: ["/practice"] },
     { href: "/review", label: "Review Queue", short: "Review", icon: "review", count: due },
     { href: "/progress", label: "My Progress", short: "Progress", icon: "progress" },
-    { href: "/settings", label: "Settings", short: "Settings", icon: "settings", also: ["/schedule"] },
   ];
+  const settings: NavItem = { href: "/settings", label: "Settings", short: "Settings", icon: "settings", also: ["/schedule"] };
   const name = `${student.firstName} ${student.lastName}`;
 
   return (
@@ -32,23 +32,15 @@ export default async function StudentLayout({ children }: { children: React.Reac
       <aside className="sidebar">
         <Brand href="/dashboard" sub="Calculus" />
         <SidebarNav items={items} label="Main" />
+        <div className="sidebar-bottom">
+          <ThemeSwitch initial={theme} />
+          <SidebarNav items={[settings]} label="Account" />
+        </div>
         <div className="sidebar-footer">
-          <div className="spread">
-            <div className="user-chip">
-              <span className="avatar" aria-hidden="true">
-                {initials(student.firstName, student.lastName)}
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <strong>{name}</strong>
-                <span className="xsmall muted">Student</span>
-              </div>
-            </div>
-            <ThemeToggle initial={theme} />
-          </div>
           <form action={signOut}>
-            <button className="btn btn-ghost btn-sm btn-block" type="submit">
-              <LogOut size={16} aria-hidden="true" />
-              Sign out
+            <button className="nav-link nav-signout" type="submit">
+              <LogOut size={20} aria-hidden="true" />
+              <span>Sign out</span>
             </button>
           </form>
         </div>
@@ -65,7 +57,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       <main id="main" className="main" tabIndex={-1}>
         {children}
       </main>
-      <TabBar items={items} label="Main" />
+      <TabBar items={[...items, settings]} label="Main" />
     </div>
   );
 }

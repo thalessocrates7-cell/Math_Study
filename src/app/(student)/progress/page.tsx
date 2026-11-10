@@ -1,6 +1,7 @@
 import { ArrowRight, Brain, CircleCheck, Gauge, Lightbulb } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { planHref } from "@/lib/checklist";
 import { ActivityColumns, RatingDonut, SectionBars } from "@/components/charts";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
@@ -80,7 +81,7 @@ export default async function ProgressPage() {
             rows={sections.map((p) => ({
               id: p.section.id,
               label: `${p.section.id} ${p.section.title}`,
-              href: `/plan/${p.section.id}`,
+              href: planHref(p.section.id, "core"),
               got: p.ratings.got_it,
               shaky: p.ratings.shaky,
               lost: p.ratings.lost,
@@ -106,7 +107,7 @@ export default async function ProgressPage() {
               <ul className="list">
                 {report.weakest.map((w) => (
                   <li key={w.section.id}>
-                    <Link className="row-link" href={`/plan/${w.section.id}`}>
+                    <Link className="row-link" href={planHref(w.section.id, "core")}>
                       <span className="row-main">
                         <span className="row-title small">
                           {w.section.id} – {w.section.title}

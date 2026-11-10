@@ -4,6 +4,7 @@ import {
   assignments,
   attempts,
   notes,
+  problemChecks,
   problems,
   problemTimeStats,
   reviewItems,
@@ -26,6 +27,8 @@ import { pickLookbackProblem } from "../lib/regressive";
 import { followUpsToClose, ratingMessage, scheduleAfterRating, type ScheduledRating } from "../lib/scheduler";
 import { DEFAULT_RULES } from "../lib/rules";
 import { overflowToDrop, type PlannedItem } from "../lib/session-builder";
+import { difficultyToLevel, nextUnchecked, planHref } from "../lib/checklist";
+import { loadChecks } from "./checklist";
 import { loadStudentModel } from "./model";
 import { completeIfDone, insertItemsAfter, nextEssential, nextOptional, practiceHref, sessionItemsOf, TRACK_ORIGIN } from "./sessions";
 
@@ -253,6 +256,8 @@ export async function rateAttempt(
       .update(attempts)
       .set({ rating, ratedAt: now, ratedDay: today, nextReviewDate: own?.dueDate ?? null, activeSeconds })
       .where(eq(attempts.id, attempt.id));
+    // Rating a problem ticks it on the Study Plan.
+    await tx.insert(problemChecks).values({ studentId, problemId: problem.id, checkedAt: now }).onConflictDoNothing();
     const easierItem = result.nextProblemId ? (created.find((c) => c.problemId === result.nextProblemId) ?? null) : null;
 
     // The planner's view after this rating.
@@ -319,6 +324,7 @@ export async function rateAttempt(
         personal: model.personal,
         maxMinutes: Number.POSITIVE_INFINITY,
         taken: new Set([...items.map((i) => i.problemId), ...insert.map((i) => i.problemId)]),
+        ticked: model.input.ticked,
       });
       if (pick) insert.push({ track: "lookback", problemId: pick.problemId, reviewItemId: null, reason: bridge.reason, minutes: pick.minutes, essential: true });
     }
@@ -361,29 +367,13 @@ async function nextInSession(q: Q, studentId: string, sessionItemId: string): Pr
   return nextFromItems(await sessionItemsOf(q, item.sessionId), item, false);
 }
 
-async function nextUnratedInSection(q: Q, studentId: string, sectionId: string): Promise<string | null> {
-  const rows = await q
-    .select({ problemId: assignments.problemId })
-    .from(assignments)
-    .innerJoin(problems, eq(problems.id, assignments.problemId))
-    .where(and(eq(assignments.studentId, studentId), eq(assignments.sectionId, sectionId), eq(problems.active, true)))
-    .orderBy(asc(assignments.position));
-  if (rows.length === 0) return null;
-  const rated = await q
-    .selectDistinct({ problemId: attempts.problemId })
-    .from(attempts)
-    .where(
-      and(
-        eq(attempts.studentId, studentId),
-        isNotNull(attempts.ratedAt),
-        inArray(
-          attempts.problemId,
-          rows.map((r) => r.problemId),
-        ),
-      ),
-    );
-  const done = new Set(rated.map((r) => r.problemId));
-  return rows.find((r) => !done.has(r.problemId))?.problemId ?? null;
+/** Active problems of one section and level, in textbook order (the Study Plan's list). */
+async function levelList(q: Q, sectionId: string, difficulty: Problem["difficulty"]): Promise<Array<{ id: string }>> {
+  return q
+    .select({ id: problems.id })
+    .from(problems)
+    .where(and(eq(problems.sectionId, sectionId), eq(problems.difficulty, difficulty), eq(problems.active, true)))
+    .orderBy(asc(problems.sort));
 }
 
 async function nextAfter(
@@ -409,10 +399,12 @@ async function nextAfter(
     if (due) return { nextHref: `/practice/${encodeURIComponent(due.problemId)}?item=${due.id}`, nextLabel: "Next review problem" };
     return { nextHref: "/review", nextLabel: "Back to the review queue" };
   }
-  const sectionId = cameFrom?.sourceProblemId ? ((await getProblem(q, cameFrom.sourceProblemId))?.sectionId ?? problem.sectionId) : problem.sectionId;
-  const nextId = await nextUnratedInSection(q, studentId, sectionId);
+  // Back on the Study Plan's list: the next unticked problem at the same level, else the plan itself.
+  const base = cameFrom?.sourceProblemId ? ((await getProblem(q, cameFrom.sourceProblemId)) ?? problem) : problem;
+  const [list, checked] = await Promise.all([levelList(q, base.sectionId, base.difficulty), loadChecks(q, studentId)]);
+  const nextId = nextUnchecked(list, checked, base.id);
   if (nextId) return { nextHref: `/practice/${encodeURIComponent(nextId)}`, nextLabel: "Next problem" };
-  return { nextHref: `/plan/${encodeURIComponent(sectionId)}?complete=1`, nextLabel: "Finish the section" };
+  return { nextHref: planHref(base.sectionId, difficultyToLevel(base.difficulty)), nextLabel: "Back to the Study Plan" };
 }
 
 export type HistoryRow = {
@@ -480,26 +472,23 @@ export async function workspaceData(q: Q, studentId: string, problemId: string, 
   }
   if (!problem.active && !reviewItem) return null;
 
-  const [[section], plan, rated, [note]] = await Promise.all([
+  const [[section], plan, rated, [note], checked] = await Promise.all([
     q.select().from(sections).where(eq(sections.id, problem.sectionId)),
-    q
-      .select({ problemId: assignments.problemId, position: assignments.position })
-      .from(assignments)
-      .innerJoin(problems, eq(problems.id, assignments.problemId))
-      .where(and(eq(assignments.studentId, studentId), eq(assignments.sectionId, problem.sectionId), eq(problems.active, true)))
-      .orderBy(asc(assignments.position)),
+    // The list the Study Plan shows: this section at this problem's level.
+    levelList(q, problem.sectionId, problem.difficulty),
     q
       .select({ problemId: attempts.problemId, rating: attempts.rating, ratedDay: attempts.ratedDay, ratedAt: attempts.ratedAt, openstax: problems.openstaxNumber })
       .from(attempts)
       .innerJoin(problems, eq(problems.id, attempts.problemId))
       .where(and(eq(attempts.studentId, studentId), eq(problems.sectionId, problem.sectionId), isNotNull(attempts.ratedAt))),
     q.select({ text: notes.text }).from(notes).where(and(eq(notes.studentId, studentId), eq(notes.problemId, problemId))),
+    loadChecks(q, studentId),
   ]);
 
   const summaries = summarize(
     rated.map((r) => ({ problemId: r.problemId, rating: r.rating!, ratedDay: r.ratedDay!, ratedAt: r.ratedAt! })),
   );
-  const index = plan.findIndex((p) => p.problemId === problemId);
+  const index = plan.findIndex((p) => p.id === problemId);
   const openstaxById = new Map(rated.map((r) => [r.problemId, r.openstax]));
   const recentWeak = [...summaries.entries()]
     .filter(([id, s]) => id !== problemId && (s.latest === "shaky" || s.latest === "lost"))
@@ -512,7 +501,7 @@ export async function workspaceData(q: Q, studentId: string, problemId: string, 
     section: { id: section.id, title: section.title, objectives: section.objectives, concepts: section.concepts },
     position: index >= 0 ? index + 1 : null,
     total: plan.length,
-    done: plan.filter((p) => summaries.has(p.problemId)).length,
+    done: plan.filter((p) => checked.has(p.id)).length,
     note: note?.text ?? "",
     reviewItem,
     recentWeak,

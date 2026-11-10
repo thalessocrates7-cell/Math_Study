@@ -4,7 +4,7 @@ import { E2E_ADMIN_CODE } from "../playwright.config";
 import { adminSignIn, horizontalOverflow, signIn } from "./helpers";
 
 const PUBLIC = ["/", "/signin", "/admin"];
-const STUDENT = ["/dashboard", "/plan", "/plan/5.2", "/practice/5.2-72", "/practice/5.1-39", "/review", "/progress", "/settings"];
+const STUDENT = ["/dashboard", "/plan", "/plan?section=5.3&level=challenge", "/practice/5.2-72", "/practice/5.1-39", "/review", "/progress", "/settings"];
 const ADMIN = ["/admin/dashboard", "/admin/students", "/admin/problems", "/admin/problems/5.2-72", "/admin/plan", "/admin/settings"];
 const SHOTS = "test-results/shots-e2e";
 

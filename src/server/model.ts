@@ -26,6 +26,7 @@ import type { TimeStats } from "../lib/estimates";
 import type { EngineAttempt, EngineProblem, EngineReview, EngineUnit } from "../lib/learning-state";
 import type { ReasonLookup } from "../lib/reasons";
 import { type Rules, resolveRules } from "../lib/rules";
+import { loadChecks } from "./checklist";
 
 export type ProblemLite = {
   id: string;
@@ -69,7 +70,7 @@ export type Loaded = {
 export async function loadStudentModel(q: Q, student: Student, now = new Date()): Promise<Loaded> {
   const today = todayISO(now);
   const recentSince = new Date(now.getTime() - 4 * 86_400_000);
-  const [settingsRows, secs, probs, stats, atts, pending, sessions, recent] = await Promise.all([
+  const [settingsRows, secs, probs, stats, atts, pending, sessions, recent, ticked] = await Promise.all([
     q.select().from(settings).where(eq(settings.id, 1)),
     q.select().from(sections).orderBy(asc(sections.sort)),
     q
@@ -99,6 +100,7 @@ export async function loadStudentModel(q: Q, student: Student, now = new Date())
       .from(sessionItems)
       .where(and(eq(sessionItems.studentId, student.id), gte(sessionItems.createdAt, recentSince)))
       .orderBy(asc(sessionItems.position)),
+    loadChecks(q, student.id),
   ]);
 
   const row = settingsRows[0];
@@ -169,6 +171,7 @@ export async function loadStudentModel(q: Q, student: Student, now = new Date())
     rules,
     seed: student.id,
     includeSupplementary: student.supplementaryOptIn,
+    ticked,
     minutesUsedToday,
     challengeDoneToday: sessions.length > 0,
     skippedToday,

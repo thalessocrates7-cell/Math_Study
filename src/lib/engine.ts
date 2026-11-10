@@ -34,6 +34,8 @@ export type EngineInput = {
   /** Stable per-student seed (the student id), so classmates get different problems. */
   seed: string;
   includeSupplementary: boolean;
+  /** Problems the student ticked on the Study Plan. */
+  ticked?: ReadonlySet<string>;
   minutesUsedToday?: number;
   challengeDoneToday?: boolean;
   skippedToday?: Set<string>;
@@ -140,6 +142,7 @@ export function computeModel(input: EngineInput): StudentModel {
     reviews: input.reviews,
     rules,
     seed: input.seed,
+    ticked: input.ticked,
     personal,
     levelMinutes,
   };

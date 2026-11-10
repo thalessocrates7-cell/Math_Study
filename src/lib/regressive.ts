@@ -192,6 +192,8 @@ export function pickLookbackProblem(input: {
   personal: (problemId: string) => number;
   maxMinutes: number;
   taken: ReadonlySet<string>;
+  /** Problems ticked on the Study Plan: an unseen pick prefers ones that aren't. */
+  ticked?: ReadonlySet<string>;
 }): LookbackPick | null {
   const { unitId, today, state, rules, seed } = input;
   const st = state.unitById.get(unitId);
@@ -224,7 +226,8 @@ export function pickLookbackProblem(input: {
     const cands = withSkill(s);
     const level = s.baseLevel ?? "C";
     // 1. A problem at the skill's base level they haven't done: tests transfer.
-    const fresh = cands.filter((p) => p.difficulty === level && !rated(p.id)).sort(shuffle);
+    const isTicked = (p: EngineProblem) => Number(input.ticked?.has(p.id) ?? false);
+    const fresh = cands.filter((p) => p.difficulty === level && !rated(p.id)).sort((a, b) => isTicked(a) - isTicked(b) || shuffle(a, b));
     const fittingFresh = fresh.find(fits);
     if (fittingFresh) return pick(fittingFresh);
     // 2. Something they got right a while ago: a retention check.

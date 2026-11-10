@@ -68,8 +68,8 @@ test("review queue, progress and notes reflect the ratings", async ({ page }) =>
   await expect(page.getByText("Problems attempted")).toBeVisible();
   await expect(page.getByRole("img", { name: /You rated 50% of your problems Got it/ })).toBeVisible();
 
-  await page.goto("/plan/4.10");
-  await page.getByRole("link", { name: /Continue Practice/ }).click();
+  await page.goto("/plan?section=4.10&level=foundation");
+  await page.getByRole("link", { name: /^Exercise|^Practice/ }).first().click();
   const notes = page.getByLabel("Notes");
   await notes.fill("power rule: add one, divide by the new power");
   await notes.blur();

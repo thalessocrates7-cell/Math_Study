@@ -50,6 +50,8 @@
   --diff-c-soft: light-dark(#eeecfb, #2b2858);
   --diff-ch: light-dark(#9a1f9e, #f0a6f3);
   --diff-ch-soft: light-dark(#fbeafb, #3a1e3d);
+  /* Text on the solid level badges on the Study Plan (the --diff-* colors become the badge fill). */
+  --on-diff: light-dark(#ffffff, #161226);
 
   /* charts (validated with the dataviz palette checker; labels carry identity) */
   --chart-got: light-dark(#0c7352, #27a37a);

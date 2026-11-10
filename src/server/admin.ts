@@ -7,6 +7,7 @@ import {
   attempts,
   notes,
   planConfig,
+  problemChecks,
   problems,
   reviewItems,
   sections,
@@ -383,6 +384,7 @@ export async function deleteProblem(db: DB, id: string): Promise<"deleted" | "de
   const affected = await studentsWithProblems(db, [id]);
   await db.delete(assignments).where(eq(assignments.problemId, id));
   await db.delete(notes).where(eq(notes.problemId, id));
+  await db.delete(problemChecks).where(eq(problemChecks.problemId, id));
   await db.delete(problems).where(eq(problems.id, id));
   // Students who had it now have a gap in that section; refill it from the remaining pool.
   if (row && affected.length > 0) await rebalanceAllStudents(db, [row.sectionId], affected);
