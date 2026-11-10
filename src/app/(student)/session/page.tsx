@@ -1,7 +1,6 @@
 import { ArrowRight, CalendarDays, PartyPopper, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { finishSessionAction, keepGoingAction, startSessionAction } from "@/app/actions/session";
 import { DifficultyBadge } from "@/components/Badges";
 import { PageTransition } from "@/components/PageTransition";
@@ -94,7 +93,6 @@ function KeepGoing({ loaded, extras }: { loaded: Loaded; extras: PlannedItem[] }
 
 export default async function SessionPage() {
   const student = await requireStudent();
-  if (!student.onboardedAt) redirect("/schedule?setup=1");
   const db = await getDb();
   const loaded = await loadStudentModel(db, student);
   const pacing = pacingText(loaded.model.plan.pacing);

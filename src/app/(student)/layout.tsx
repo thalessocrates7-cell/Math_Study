@@ -17,7 +17,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
   const [due, theme] = await Promise.all([dueReviewCount(db, student.id, todayISO()), readTheme()]);
   const items: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", short: "Home", icon: "home", also: ["/session"] },
-    { href: "/plan", label: "Study Plan", short: "Plan", icon: "plan", also: ["/practice"] },
+    { href: "/plan", label: "Study Plan", short: "Plan", icon: "plan" },
     { href: "/review", label: "Review Queue", short: "Review", icon: "review", count: due },
     { href: "/progress", label: "My Progress", short: "Progress", icon: "progress" },
   ];

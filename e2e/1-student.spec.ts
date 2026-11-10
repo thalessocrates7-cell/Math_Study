@@ -12,13 +12,13 @@ test("sign-in validates names and creates the account", async ({ page }) => {
   await signIn(page, "Ada", "Lovelace");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Ada");
   await expect(page.getByText("Exam 4", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Start session/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Start Studying/ })).toBeVisible();
 });
 
 test("practice: hint, answer and worked solution are logged; Lost serves an easier problem", async ({ page }) => {
   await signIn(page, "Ada", "Lovelace");
-  await page.getByRole("button", { name: /Start session/ }).click();
-  await expect(page).toHaveURL(/\/practice\/4\.10-/);
+  await page.getByRole("button", { name: /Start Studying/ }).click();
+  await expect(page).toHaveURL(/\/practice\/4\.10-[^?]+\?s=/);
   await expect(page.getByText(/Problem 1 of \d+/).first()).toBeVisible();
 
   const hint = page.getByRole("button", { name: "Get a Hint" });
@@ -97,5 +97,5 @@ test("the same name (any capitals or spacing) returns to the same account", asyn
   await signIn(page, "  ada ", "LOVELACE");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Ada");
   await expect(page.getByText("Recent Activity")).toBeVisible();
-  await expect(page.getByRole("link", { name: /^(Continue|Resume)/ }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /Continue Studying/ }).or(page.getByRole("button", { name: /Continue Studying/ }))).toBeVisible();
 });
