@@ -7,7 +7,7 @@ import { DIFFICULTIES, DIFFICULTY_BLURB, DIFFICULTY_LABEL, type Difficulty } fro
 import { toggleCheckAction } from "@/app/actions/plan";
 import { DifficultyBadge, RatingPill } from "@/components/Badges";
 import { ProgressBar } from "@/components/Progress";
-import { checklistFor, checklistProgress, difficultyToLevel, levelToDifficulty, planHref, type Level } from "@/lib/checklist";
+import { checklistFor, checklistProgress, difficultyToLevel, levelToDifficulty, planHref, planRowId, type Level } from "@/lib/checklist";
 
 export type PlanSection = { id: string; title: string; objective: string };
 export type PlanProblem = {
@@ -40,7 +40,19 @@ export function StudyPlanView(props: {
   const [checked, setChecked] = useState(() => new Set(props.checked));
   const [open, setOpen] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // The row of the problem the student just left with X (or Previous/Next past an end), briefly marked.
+  const [returned, setReturned] = useState<string | null>(null);
   const first = useRef(true);
+
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const row = id.startsWith("p-") ? document.getElementById(id) : null;
+    if (!row) return;
+    row.scrollIntoView({ block: "center" });
+    setReturned(id);
+    const t = window.setTimeout(() => setReturned(null), 2400);
+    return () => window.clearTimeout(t);
+  }, []);
 
   // Keep the address in step with the two choices, so a reload or a shared link opens the same view.
   useEffect(() => {
@@ -166,7 +178,7 @@ export function StudyPlanView(props: {
                   {list.map((p) => {
                     const on = checked.has(p.id);
                     return (
-                      <li key={p.id} className="check-row" data-done={on}>
+                      <li key={p.id} id={planRowId(p.id)} className="check-row" data-done={on} data-returned={returned === planRowId(p.id) || undefined}>
                         <label className="check-box">
                           <input type="checkbox" checked={on} onChange={(e) => toggle(p.id, e.target.checked)} />
                           <span className="sr-only">{p.label} done</span>

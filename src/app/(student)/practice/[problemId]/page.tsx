@@ -1,4 +1,4 @@
-import { CircleX, TriangleExclamationPoint } from "lucide-react";
+import { CircleX, TriangleExclamationPoint, X } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -12,7 +12,7 @@ import { ProgressBar } from "@/components/Progress";
 import { TrackPill } from "@/components/session/SessionParts";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
-import { difficultyToLevel, planHref } from "@/lib/checklist";
+import { difficultyToLevel, exitHref, planHref } from "@/lib/checklist";
 import { formatMonthDay } from "@/lib/dates";
 import { renderRich } from "@/lib/tex";
 import { type HistoryRow, problemHistory, workspaceData } from "@/server/practice";
@@ -147,6 +147,21 @@ export default async function PracticePage({ params, searchParams }: Props) {
 
   const planLink = planHref(section.id, difficultyToLevel(problem.difficulty));
   const crumb = bar ? { href: "/session", text: "Today's Session" } : data.reviewItem ? { href: "/review", text: "Review Queue" } : { href: planLink, text: "Study Plan" };
+  // X leaves the problem: back to today's session, or to this problem's own section and level in the Study Plan.
+  const exit = exitHref({ sessionId: bar ? bar.sessionId : null, sectionId: section.id, difficulty: problem.difficulty, problemId: problem.id });
+  const exitTo = bar ? "Today's Session" : `${section.id} ${DIFFICULTY_LABEL[problem.difficulty]} in the Study Plan`;
+  // Previous / Next walk the Study Plan's list, so they show only for problems opened from the Study Plan.
+  // Past either end they do what X does.
+  const pager =
+    !bar && !data.reviewItem && data.position
+      ? {
+          prevHref: data.prevId ? `/practice/${encodeURIComponent(data.prevId)}` : exit,
+          nextHref: data.nextId ? `/practice/${encodeURIComponent(data.nextId)}` : exit,
+          prevLabel: data.prevId ? undefined : `Previous: back to ${exitTo}`,
+          nextLabel: data.nextId ? undefined : `Next: back to ${exitTo}`,
+          label: `${DIFFICULTY_LABEL[problem.difficulty]} ${data.position} of ${data.total}`,
+        }
+      : null;
 
   return (
     <PageTransition>
@@ -162,14 +177,19 @@ export default async function PracticePage({ params, searchParams }: Props) {
             <li aria-current="page">Practice</li>
           </ol>
         </nav>
-        <header className="page-header" style={{ marginBottom: 12 }}>
-          <div>
+        <header className="page-header practice-header" style={{ marginBottom: 12 }}>
+          <div className="practice-title">
             <h1>
               {section.id} – {section.title}
             </h1>
             {!bar && data.reviewItem ? <p className="lede">{REASON[data.reviewItem.reason]}</p> : null}
           </div>
-          <DifficultyBadge d={problem.difficulty} />
+          <span className="practice-level">
+            <DifficultyBadge d={problem.difficulty} />
+          </span>
+          <Link className="icon-btn exit-btn" href={exit} aria-label={`Exit practice, back to ${exitTo}`} title={`Back to ${exitTo}`}>
+            <X size={22} aria-hidden="true" />
+          </Link>
         </header>
 
         {bar ? (
@@ -228,6 +248,7 @@ export default async function PracticePage({ params, searchParams }: Props) {
           answerHtml={renderRich(problem.answer)}
           steps={problem.steps.map((s) => ({ title: s.title, html: renderRich(s.body) }))}
           note={data.note}
+          pager={pager}
           asideTop={asideTop}
           asideBottom={asideBottom}
         />

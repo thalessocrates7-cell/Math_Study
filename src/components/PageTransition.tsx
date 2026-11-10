@@ -1,9 +1,10 @@
 import { ViewTransition } from "react";
 
 // Animation classes are styled in app.css ("motion: route transitions"). Link transition types:
-// "nav-forward" = next step in a flow (slides left), "same-page" = a filter on the same page (no motion).
-const ENTER = { "nav-forward": "nav-forward", "same-page": "none", default: "page-enter" };
-const EXIT = { "nav-forward": "nav-forward", "same-page": "none", default: "page-exit" };
+// "nav-forward" = next step in a flow (slides left), "nav-back" = the step before (slides right),
+// "same-page" = a filter on the same page (no motion).
+const ENTER = { "nav-forward": "nav-forward", "nav-back": "nav-back", "same-page": "none", default: "page-enter" };
+const EXIT = { "nav-forward": "nav-forward", "nav-back": "nav-back", "same-page": "none", default: "page-exit" };
 
 /**
  * Route-change motion: the new page fades and rises in while the old one fades out quickly.

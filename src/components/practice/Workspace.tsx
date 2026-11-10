@@ -32,6 +32,11 @@ export type WorkspaceProps = {
   answerHtml: string;
   steps: Array<{ title: string; html: string }>;
   note: string;
+  /**
+   * Previous / Next through the Study Plan's list (problems opened from the Study Plan only).
+   * Labels are set only when a button leaves the list, to say where it goes.
+   */
+  pager: { prevHref: string; nextHref: string; prevLabel?: string; nextLabel?: string; label: string } | null;
   asideTop: React.ReactNode;
   asideBottom: React.ReactNode;
 };
@@ -326,6 +331,19 @@ export function Workspace(props: WorkspaceProps) {
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </p>
+        ) : null}
+        {props.pager && !pending && !outcome ? (
+          <nav className="ws-pager" aria-label="Problems in this list">
+            <Link className="btn btn-secondary" href={props.pager.prevHref} aria-label={props.pager.prevLabel} transitionTypes={["nav-back"]}>
+              <ArrowLeft size={18} aria-hidden="true" />
+              Previous
+            </Link>
+            <span className="small text-2 num ws-pager-label">{props.pager.label}</span>
+            <Link className="btn btn-primary" href={props.pager.nextHref} aria-label={props.pager.nextLabel} transitionTypes={["nav-forward"]}>
+              Next
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          </nav>
         ) : null}
       </section>
 

@@ -27,7 +27,7 @@ import { pickLookbackProblem } from "../lib/regressive";
 import { followUpsToClose, ratingMessage, scheduleAfterRating, type ScheduledRating } from "../lib/scheduler";
 import { DEFAULT_RULES } from "../lib/rules";
 import { overflowToDrop, type PlannedItem } from "../lib/session-builder";
-import { difficultyToLevel, nextUnchecked, planHref } from "../lib/checklist";
+import { difficultyToLevel, neighbors, nextUnchecked, planHref } from "../lib/checklist";
 import { loadChecks } from "./checklist";
 import { loadStudentModel } from "./model";
 import { completeIfDone, insertItemsAfter, nextEssential, nextOptional, practiceHref, sessionItemsOf, TRACK_ORIGIN } from "./sessions";
@@ -451,6 +451,9 @@ export type WorkspaceData = {
   position: number | null;
   total: number;
   done: number;
+  /** The problems before and after this one in the Study Plan's list (null at either end). */
+  prevId: string | null;
+  nextId: string | null;
   note: string;
   reviewItem: Pick<ReviewItem, "id" | "reason" | "status" | "dueDate" | "sourceProblemId"> | null;
   recentWeak: Array<{ problemId: string; openstaxNumber: number | null; rating: "shaky" | "lost" }>;
@@ -502,6 +505,7 @@ export async function workspaceData(q: Q, studentId: string, problemId: string, 
     position: index >= 0 ? index + 1 : null,
     total: plan.length,
     done: plan.filter((p) => checked.has(p.id)).length,
+    ...neighbors(plan, problemId),
     note: note?.text ?? "",
     reviewItem,
     recentWeak,

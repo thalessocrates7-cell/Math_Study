@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checklistFor, checklistProgress, defaultSection, nextUnchecked, parseLevel, planHref } from "../src/lib/checklist";
+import { checklistFor, checklistProgress, defaultSection, exitHref, neighbors, nextUnchecked, parseLevel, planHref, planRowId } from "../src/lib/checklist";
 
 const P = (id: string, sectionId: string, difficulty: "F" | "C" | "Ch", sort: number, active = true) => ({ id, sectionId, difficulty, sort, active });
 const bank = [
@@ -43,5 +43,33 @@ describe("study plan checklist", () => {
     expect(defaultSection(["4.10", "5.1"], "5.1")).toBe("5.1");
     expect(defaultSection(["4.10", "5.1"], null)).toBe("4.10");
     expect(defaultSection(["4.10", "5.1"], "4.1")).toBe("4.10");
+  });
+});
+
+describe("leaving a practice problem", () => {
+  it("goes back to today's session when the problem came from it", () => {
+    expect(exitHref({ sessionId: "s1", sectionId: "5.1", difficulty: "C", problemId: "5.1-8" })).toBe("/session");
+  });
+
+  it("otherwise goes to the problem's own section and level, on its row", () => {
+    expect(exitHref({ sessionId: null, sectionId: "5.1", difficulty: "C", problemId: "5.1-8" })).toBe("/plan?section=5.1&level=core#p-5.1-8");
+    expect(exitHref({ sessionId: null, sectionId: "4.10", difficulty: "Ch", problemId: "4.10-503" })).toBe(`${planHref("4.10", "challenge")}#${planRowId("4.10-503")}`);
+  });
+});
+
+describe("Previous and Next in the Study Plan's list", () => {
+  const list = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+  it("finds the problems on either side", () => {
+    expect(neighbors(list, "b")).toEqual({ prevId: "a", nextId: "c" });
+  });
+
+  it("has nothing before the first or after the last (the page then sends those buttons back to the section)", () => {
+    expect(neighbors(list, "a")).toEqual({ prevId: null, nextId: "b" });
+    expect(neighbors(list, "c")).toEqual({ prevId: "b", nextId: null });
+  });
+
+  it("has no neighbours for a problem that isn't in the list", () => {
+    expect(neighbors(list, "z")).toEqual({ prevId: null, nextId: null });
   });
 });

@@ -51,3 +51,24 @@ export function defaultSection(sectionIds: readonly string[], currentUnitId: str
 export function planHref(sectionId: string, level: Level): string {
   return `/plan?section=${encodeURIComponent(sectionId)}&level=${level}`;
 }
+
+/** The id of a problem's row in the Study Plan, so a link can land on that row. */
+export const planRowId = (problemId: string): string => `p-${problemId}`;
+
+/**
+ * Where leaving a practice problem goes (the X, and Previous/Next past either end): back to today's
+ * session when it was opened from one, otherwise to the problem's own section and level in the
+ * Study Plan, on its row. Built from the problem's own data, so a Review Queue problem returns to
+ * the section it belongs to.
+ */
+export function exitHref(p: { sessionId: string | null; sectionId: string; difficulty: Difficulty; problemId: string }): string {
+  if (p.sessionId) return "/session";
+  return `${planHref(p.sectionId, difficultyToLevel(p.difficulty))}#${planRowId(p.problemId)}`;
+}
+
+/** The problems before and after `id` in a list (null at either end, or when `id` isn't in it). */
+export function neighbors(list: readonly { id: string }[], id: string): { prevId: string | null; nextId: string | null } {
+  const i = list.findIndex((p) => p.id === id);
+  if (i < 0) return { prevId: null, nextId: null };
+  return { prevId: list[i - 1]?.id ?? null, nextId: list[i + 1]?.id ?? null };
+}
