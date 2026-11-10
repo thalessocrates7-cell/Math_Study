@@ -1,5 +1,5 @@
 /**
- * The study-schedule form: availability, the student's own exam date and the supplementary opt-in.
+ * The study-schedule form: availability and the student's own exam date.
  * Pure so it can be tested; the server action passes the raw form values in.
  */
 import { type Availability, validateAvailability } from "./availability";
@@ -9,13 +9,12 @@ export type ScheduleValue = {
   availability: Availability;
   /** null = follow the class exam date (so a change by the instructor reaches this student). */
   examDateOverride: string | null;
-  supplementaryOptIn: boolean;
 };
 
 export type ScheduleField = "days" | "examDate";
 export type ScheduleResult = { ok: true; value: ScheduleValue } | { ok: false; error: string; field: ScheduleField };
 
-export type ScheduleRaw = { availability: string; examDate: string; supplementary: boolean };
+export type ScheduleRaw = { availability: string; examDate: string };
 
 export function parseScheduleForm(raw: ScheduleRaw, ctx: { today: string; classExamDate: string }): ScheduleResult {
   let json: unknown = null;
@@ -35,5 +34,5 @@ export function parseScheduleForm(raw: ScheduleRaw, ctx: { today: string; classE
     if (date > addDays(ctx.today, 366)) return { ok: false, error: "Choose an exam date within the next year.", field: "examDate" };
     examDateOverride = date;
   }
-  return { ok: true, value: { availability: av.value, examDateOverride, supplementaryOptIn: raw.supplementary } };
+  return { ok: true, value: { availability: av.value, examDateOverride } };
 }

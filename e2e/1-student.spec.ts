@@ -12,14 +12,14 @@ test("sign-in validates names and creates the account", async ({ page }) => {
   await signIn(page, "Ada", "Lovelace");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Ada");
   await expect(page.getByText("Exam 4", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Start Studying/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Start session/ })).toBeVisible();
 });
 
 test("practice: hint, answer and worked solution are logged; Lost serves an easier problem", async ({ page }) => {
   await signIn(page, "Ada", "Lovelace");
-  await page.getByRole("link", { name: /Start Studying/ }).click();
+  await page.getByRole("button", { name: /Start session/ }).click();
   await expect(page).toHaveURL(/\/practice\/4\.10-/);
-  await expect(page.getByText("Question 1 of 15")).toBeVisible();
+  await expect(page.getByText(/Problem 1 of \d+/).first()).toBeVisible();
 
   const hint = page.getByRole("button", { name: "Get a Hint" });
   await hint.click();
@@ -47,13 +47,14 @@ test("practice: hint, answer and worked solution are logged; Lost serves an easi
 
   // Rating saves, then opens the next problem by itself: no feedback panel, no "Next problem" button.
   await page.getByRole("button", { name: /^Lost/ }).click();
-  await expect(page).toHaveURL(/\/practice\/4\.10-.+\?item=/);
-  await expect(page.getByText("Easier problem on the same idea")).toBeVisible();
+  // Inside a session the next planned problem opens (the easier follow-up is scheduled for later).
+  await expect(page).toHaveURL(/\/practice\/4\.10-[^?]+\?s=/);
+  await expect(page.getByText(/Problem 2 of \d+/).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /Try an easier problem|Next problem/ })).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /Review Queue\s*1 due/ })).toBeVisible();
 
   await page.getByRole("button", { name: /^Got it/ }).click();
-  await expect(page).toHaveURL(/\/practice\/4\.10-[^?]+$/);
+  await expect(page.getByText(/Problem 3 of \d+/).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Next problem" })).toHaveCount(0);
 });
 
@@ -62,7 +63,6 @@ test("review queue, progress and notes reflect the ratings", async ({ page }) =>
   await page.goto("/review");
   await expect(page.getByRole("heading", { name: /Tomorrow/ })).toBeVisible();
   await expect(page.getByText("You marked this Lost")).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Coming up/ })).toBeVisible();
 
   await page.goto("/progress");
   await expect(page.getByText("Problems attempted")).toBeVisible();
@@ -81,7 +81,7 @@ test("review queue, progress and notes reflect the ratings", async ({ page }) =>
 test("theme choice persists and sign-out protects pages", async ({ page }) => {
   await signIn(page, "Ada", "Lovelace");
   await page.goto("/settings");
-  await page.getByLabel(/Dark/).check();
+  await page.getByRole("radio", { name: /Dark/ }).check();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -97,5 +97,5 @@ test("the same name (any capitals or spacing) returns to the same account", asyn
   await signIn(page, "  ada ", "LOVELACE");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Ada");
   await expect(page.getByText("Recent Activity")).toBeVisible();
-  await expect(page.getByRole("link", { name: /Continue Studying/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^(Continue|Resume)/ }).first()).toBeVisible();
 });

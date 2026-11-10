@@ -19,7 +19,6 @@ export async function saveScheduleAction(_prev: ScheduleState, formData: FormDat
     {
       availability: String(formData.get("availability") ?? ""),
       examDate: String(formData.get("examDate") ?? ""),
-      supplementary: formData.get("supplementary") === "on",
     },
     { today: todayISO(), classExamDate: settings.examDate },
   );

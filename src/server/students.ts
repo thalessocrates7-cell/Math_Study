@@ -45,7 +45,6 @@ export async function saveSchedule(q: Q, id: string, value: ScheduleValue): Prom
     .set({
       availability: value.availability,
       examDateOverride: value.examDateOverride,
-      supplementaryOptIn: value.supplementaryOptIn,
       onboardedAt: sql`coalesce(${students.onboardedAt}, now())`,
     })
     .where(eq(students.id, id));

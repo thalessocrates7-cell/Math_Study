@@ -31,6 +31,7 @@ Last updated: **2026-11-09 (Mon)**. Exam 4 is **Wed 2026-12-02**.
   - Rating a problem ticks it. Ticked-but-unrated problems rank last when sessions pick new work.
   - The sidebar has a Dark Mode switch, Settings below it, and Sign out at the bottom; the name card is gone.
   - `/plan/5.3` forwards to the new page. The dashboard bars and the practice page's "Challenge 2 of 5" use the same lists.
+- **"Extra sections" option removed (2026-11-09):** the card on `/schedule` and the row on `/settings` are gone, and the schedule form no longer reads or writes `supplementaryOptIn`. `/plan` lists core sections only. Kept on purpose: the `students.supplementary_opt_in` column, the empty 4.1/4.2 shells and the engine's `includeSupplementary` (no migration). Once 4.1/4.2 get problems, students will have no way to opt in; that needs a new decision then. Checks: `tsc` clean, 87 Vitest tests, `next build` OK. Not browser-checked yet.
 - **Migration `0002_checks.sql`:** new table `problem_checks`, plus a data step that ticks every problem already rated. Upgrade-tested on an old-schema database (3 rated ticked; skipped and unrated not; no rows lost).
 - **Before pushing to `main`:** it changes the live database, so take a backup first (CSV export from `/admin` plus a Neon branch) and ask the user.
 - **Checks:** `npx tsc --noEmit` clean, `npx vitest run` 86 tests, `npx next build` OK, `npm run contrast` OK. Browser-checked at 1440 and 390 px, light and dark. The Playwright specs (`e2e/`) were updated and added but **not run**.

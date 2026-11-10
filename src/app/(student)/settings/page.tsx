@@ -63,8 +63,6 @@ export default async function SettingsPage() {
                 {formatFullDate(student.examDateOverride ?? settings.examDate)}
                 {student.examDateOverride ? " (your own date)" : ""}
               </dd>
-              <dt>Extra sections</dt>
-              <dd>{student.supplementaryOptIn ? "Included" : "Off"}</dd>
             </dl>
             <p className="small text-2" style={{ margin: "12px 0" }}>
               Each study session is planned to fit this time. Change it whenever your week changes.

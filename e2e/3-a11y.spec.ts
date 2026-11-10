@@ -52,14 +52,14 @@ test.describe("phone width (390px)", () => {
       await page.goto(url);
       await page.waitForLoadState("networkidle");
       expect(await horizontalOverflow(page), `overflow on ${url}`).toBe(0);
-      await page.screenshot({ path: `${SHOTS}/390${url.replace(/[/.]/g, "_")}.png`, fullPage: true });
+      await page.screenshot({ path: `${SHOTS}/390${url.replace(/[^a-z0-9]/gi, "_")}.png`, fullPage: true });
     }
     await adminSignIn(page, E2E_ADMIN_CODE);
     for (const url of ADMIN) {
       await page.goto(url);
       await page.waitForLoadState("networkidle");
       expect(await horizontalOverflow(page), `overflow on ${url}`).toBe(0);
-      await page.screenshot({ path: `${SHOTS}/390${url.replace(/[/.]/g, "_")}.png`, fullPage: true });
+      await page.screenshot({ path: `${SHOTS}/390${url.replace(/[^a-z0-9]/gi, "_")}.png`, fullPage: true });
     }
   });
 

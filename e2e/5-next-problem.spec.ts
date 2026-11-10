@@ -28,6 +28,8 @@ test("if saving fails the student stays on the problem and can retry", async ({ 
   await signIn(page, "Grace", "Hopper");
   await openFirstProblem(page);
   const start = page.url();
+  // Let the page start its attempt first, so only the rating save is blocked below.
+  await page.waitForLoadState("networkidle");
 
   // Block the server action that saves a rating (server actions are POSTs with a Next-Action header).
   let block = true;
@@ -38,7 +40,7 @@ test("if saving fails the student stays on the problem and can retry", async ({ 
   });
 
   await page.getByRole("button", { name: /^Shaky/ }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "rating wasn't saved" })).toBeVisible();
   await expect(page).toHaveURL(start);
   await expect(page.getByRole("button", { name: /^Shaky/ })).toBeEnabled();
 

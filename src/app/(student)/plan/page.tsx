@@ -21,7 +21,7 @@ export default async function PlanPage({ searchParams }: Props) {
   const withProblems = new Set(loaded.problems.filter((p) => p.active).map((p) => p.sectionId));
   // Exam 4 sections, plus the extra ones only for students who opted in, and only once they have problems.
   const sections = loaded.sections
-    .filter((s) => withProblems.has(s.id) && (s.kind === "core" || student.supplementaryOptIn))
+    .filter((s) => withProblems.has(s.id) && s.kind === "core")
     .map((s) => ({ id: s.id, title: s.title, objective: s.objectives[0] ?? "" }));
   const planProblems: PlanProblem[] = loaded.problems
     .filter((p) => p.active)

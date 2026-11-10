@@ -57,7 +57,7 @@ describe("study sessions", () => {
 
   it("saves a schedule, previews without writing, and starts once even if Start is pressed twice", async () => {
     expect(student.onboardedAt).toBeNull();
-    await saveSchedule(db, student.id, { availability: AVAILABILITY, examDateOverride: null, supplementaryOptIn: false });
+    await saveSchedule(db, student.id, { availability: AVAILABILITY, examDateOverride: null });
     [student] = await db.select().from(students).where(eq(students.id, student.id));
     expect(student.onboardedAt).not.toBeNull();
 
@@ -160,7 +160,7 @@ describe("study sessions", () => {
 
   it("inserts a bridge look-back after the first problems in a new unit", async () => {
     ({ student } = await findOrCreateStudent(db, "Dan", "Moss"));
-    await saveSchedule(db, student.id, { availability: AVAILABILITY, examDateOverride: null, supplementaryOptIn: false });
+    await saveSchedule(db, student.id, { availability: AVAILABILITY, examDateOverride: null });
     const mon = await startSession(db, student, null, MON);
     for (let list = await itemsOf(mon), next = nextEssential(list); next; list = await itemsOf(mon), next = nextEssential(list)) {
       await solve(next.id, "got_it", MON);

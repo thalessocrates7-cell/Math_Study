@@ -5,6 +5,11 @@ export async function signIn(page: Page, first: string, last: string) {
   await page.getByLabel("First Name").fill(first);
   await page.getByLabel("Last Name").fill(last);
   await page.getByRole("button", { name: "Continue" }).click();
+  // A new student is first sent to set up a schedule; saving the default one lands on the dashboard.
+  await expect(page).toHaveURL(/\/(dashboard|schedule\?setup=1)$/);
+  if (page.url().includes("/schedule")) {
+    await page.getByRole("button", { name: "Save and see today's plan" }).click();
+  }
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 

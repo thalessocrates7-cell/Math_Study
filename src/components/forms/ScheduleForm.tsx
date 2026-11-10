@@ -24,8 +24,6 @@ export type ScheduleFormProps = {
   /** The date shown in the field: the student's own, else the class date. */
   examDate: string;
   classExamDate: string;
-  supplementary: boolean;
-  supplementaryTitles: string[];
   today: string;
 };
 
@@ -265,21 +263,6 @@ export function ScheduleForm(props: ScheduleFormProps) {
             </button>
           </div>
         ) : null}
-      </section>
-
-      <section className="card stack" aria-labelledby="extra-title">
-        <h2 id="extra-title" className="card-title" style={{ marginBottom: 0 }}>
-          Extra sections
-        </h2>
-        <label className="checkbox">
-          <input id="supplementary" type="checkbox" name="supplementary" defaultChecked={props.supplementary} aria-describedby="extra-hint" />
-          <span>
-            Include {props.supplementaryTitles.join(" and ")}
-          </span>
-        </label>
-        <p id="extra-hint" className="field-hint" style={{ marginTop: -8 }}>
-          Not on Exam 4. When they have problems, they appear only as optional extra practice and never count toward your exam progress.
-        </p>
       </section>
 
       <div className="form-actions">

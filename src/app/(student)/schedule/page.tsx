@@ -1,11 +1,9 @@
 import { Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
 import { ScheduleForm } from "@/components/forms/ScheduleForm";
 import { PageTransition } from "@/components/PageTransition";
 import { getDb } from "@/db/client";
-import { sections } from "@/db/schema";
 import { requireStudent } from "@/lib/auth";
 import { DEFAULT_AVAILABILITY, parseAvailability } from "@/lib/availability";
 import { todayISO } from "@/lib/dates";
@@ -20,11 +18,7 @@ export default async function SchedulePage({ searchParams }: Props) {
   const student = await requireStudent();
   const sp = await searchParams;
   const db = await getDb();
-  const [settings, rated, extras] = await Promise.all([
-    getSettings(db),
-    ratedAttemptCount(db, student.id),
-    db.select({ id: sections.id, title: sections.title }).from(sections).where(eq(sections.kind, "supplementary")).orderBy(asc(sections.sort)),
-  ]);
+  const [settings, rated] = await Promise.all([getSettings(db), ratedAttemptCount(db, student.id)]);
   // The setup view is for the first visit; once saved, this page is the editor.
   const setup = sp.setup === "1" && !student.onboardedAt;
   const saved = parseAvailability(student.availability);
@@ -77,8 +71,6 @@ export default async function SchedulePage({ searchParams }: Props) {
           initial={saved ?? DEFAULT_AVAILABILITY}
           examDate={student.examDateOverride ?? settings.examDate}
           classExamDate={settings.examDate}
-          supplementary={student.supplementaryOptIn}
-          supplementaryTitles={extras.map((s) => `${s.id} ${s.title}`)}
           today={todayISO()}
         />
       </div>
