@@ -12,7 +12,8 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { isActive, navPath } from "@/lib/nav";
 
 const ICONS = {
   home: House,
@@ -32,23 +33,27 @@ export type NavItem = {
   short?: string;
   icon: keyof typeof ICONS;
   count?: number;
-  /** Other path prefixes that should light this item up (e.g. /practice for the study plan). */
+  /** Other path prefixes that should light this item up (e.g. /session for the Dashboard). */
   also?: string[];
 };
 
-function active(pathname: string, item: NavItem): boolean {
-  const prefixes = [item.href, ...(item.also ?? [])];
-  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+function active(path: string, item: NavItem): boolean {
+  return isActive(path, [item.href, ...(item.also ?? [])]);
+}
+
+/** The path the current page counts as (a practice problem counts as the place it was opened from). */
+function useNavPath(): string {
+  return navPath(usePathname(), useSearchParams());
 }
 
 export function SidebarNav({ items, label }: { items: NavItem[]; label: string }) {
-  const pathname = usePathname();
+  const path = useNavPath();
   return (
     <nav aria-label={label}>
       <ul className="nav">
         {items.map((item) => {
           const Icon = ICONS[item.icon];
-          const on = active(pathname, item);
+          const on = active(path, item);
           return (
             <li key={item.href}>
               <Link href={item.href} className="nav-link" aria-current={on ? "page" : undefined}>
@@ -72,12 +77,12 @@ export function SidebarNav({ items, label }: { items: NavItem[]; label: string }
 }
 
 export function TabBar({ items, label }: { items: NavItem[]; label: string }) {
-  const pathname = usePathname();
+  const path = useNavPath();
   return (
     <nav className="tabbar" aria-label={label}>
       {items.map((item) => {
         const Icon = ICONS[item.icon];
-        const on = active(pathname, item);
+        const on = active(path, item);
         return (
           <Link key={item.href} href={item.href} className="tab" aria-current={on ? "page" : undefined}>
             {on ? <span className="tab-indicator" aria-hidden="true" /> : null}

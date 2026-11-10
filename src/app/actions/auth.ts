@@ -48,8 +48,7 @@ export async function signIn(_prev: SignInState, formData: FormData): Promise<Si
   const { student } = await findOrCreateStudent(db, name.first, name.last);
   await createStudentSession(student.id);
   if (student.theme === "light" || student.theme === "dark") await writeTheme(student.theme);
-  // First visit since the adaptive planner: set up a study schedule before anything else.
-  redirect(student.onboardedAt ? "/dashboard" : "/schedule?setup=1");
+  redirect("/dashboard");
 }
 
 export async function signOut(): Promise<void> {

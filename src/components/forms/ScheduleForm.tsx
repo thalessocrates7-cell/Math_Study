@@ -19,7 +19,6 @@ import {
 import { formatFullDate, isISODate } from "@/lib/dates";
 
 export type ScheduleFormProps = {
-  setup: boolean;
   initial: Availability;
   /** The date shown in the field: the student's own, else the class date. */
   examDate: string;
@@ -75,7 +74,6 @@ export function ScheduleForm(props: ScheduleFormProps) {
   return (
     <form action={action} className="stack-lg" noValidate>
       <input type="hidden" name="availability" value={JSON.stringify(availability)} />
-      {props.setup ? <input type="hidden" name="setup" value="1" /> : null}
       {state.error && !state.field ? (
         <div className="alert alert-error" role="alert">
           <CircleExclamationPoint size={18} aria-hidden="true" />
@@ -284,7 +282,7 @@ export function ScheduleForm(props: ScheduleFormProps) {
 
       <div className="form-actions">
         <button className="btn btn-primary btn-lg" type="submit" disabled={pending}>
-          {pending ? "Saving…" : props.setup ? "Save and see today's plan" : "Save schedule"}
+          {pending ? "Saving…" : "Save schedule"}
           {pending ? null : <ArrowRight size={18} aria-hidden="true" />}
         </button>
       </div>

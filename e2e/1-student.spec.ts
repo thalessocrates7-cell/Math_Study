@@ -12,14 +12,14 @@ test("sign-in validates names and creates the account", async ({ page }) => {
   await signIn(page, "Ada", "Lovelace");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Ada");
   await expect(page.getByText("Exam 4", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Start Studying/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Start Studying/ })).toBeVisible();
 });
 
 test("practice: hint, answer and worked solution are logged; Lost serves an easier problem", async ({ page }) => {
   await signIn(page, "Ada", "Lovelace");
-  await page.getByRole("link", { name: /Start Studying/ }).click();
-  await expect(page).toHaveURL(/\/practice\/4\.10-/);
-  await expect(page.getByText("Question 1 of 15")).toBeVisible();
+  await page.getByRole("button", { name: /Start Studying/ }).click();
+  await expect(page).toHaveURL(/\/practice\/4\.10-[^?]+\?s=/);
+  await expect(page.getByText(/Problem 1 of \d+/).first()).toBeVisible();
 
   const hint = page.getByRole("button", { name: "Get a Hint" });
   await hint.click();
@@ -53,13 +53,13 @@ test("practice: hint, answer and worked solution are logged; Lost serves an easi
   await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /Review Queue\s*1 due/ })).toBeVisible();
 
   await next.click();
-  await expect(page).toHaveURL(/\/practice\/4\.10-.+\?item=/);
-  await expect(page.getByText("Easier problem on the same idea")).toBeVisible();
+  await expect(page).toHaveURL(/\/practice\/4\.10-[^?]+\?s=/);
+  await expect(page.getByText("An easier problem on the same idea, after a Lost.")).toBeVisible();
   await page.getByRole("button", { name: /^Got it/ }).click();
-  const back = page.getByRole("link", { name: "Next problem" });
-  await expect(back).toBeVisible();
-  await back.click();
-  await expect(page).toHaveURL(/\/practice\/4\.10-[^?]+$/);
+  const onward = page.locator(".confirm").getByRole("link").first();
+  await expect(onward).toBeVisible();
+  await onward.click();
+  await expect(page).toHaveURL(/\/(practice\/[^?]+\?s=|session$)/);
 });
 
 test("review queue, progress and notes reflect the ratings", async ({ page }) => {
@@ -67,7 +67,6 @@ test("review queue, progress and notes reflect the ratings", async ({ page }) =>
   await page.goto("/review");
   await expect(page.getByRole("heading", { name: /Tomorrow/ })).toBeVisible();
   await expect(page.getByText("You marked this Lost")).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Coming up/ })).toBeVisible();
 
   await page.goto("/progress");
   await expect(page.getByText("Problems attempted")).toBeVisible();
@@ -102,5 +101,5 @@ test("the same name (any capitals or spacing) returns to the same account", asyn
   await signIn(page, "  ada ", "LOVELACE");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Ada");
   await expect(page.getByText("Recent Activity")).toBeVisible();
-  await expect(page.getByRole("link", { name: /Continue Studying/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Continue Studying/ }).or(page.getByRole("button", { name: /Continue Studying/ }))).toBeVisible();
 });

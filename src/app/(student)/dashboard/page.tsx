@@ -1,10 +1,9 @@
 import { ArrowRight, BadgeCheck, CalendarDays, ChevronRight, CircleCheck, RotateCcw, Trophy } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { problemLabel, RatingPill } from "@/components/Badges";
 import { ProgressBar } from "@/components/Progress";
-import { TodayCard } from "@/components/session/TodayCard";
+import { StudyCard } from "@/components/session/StudyCard";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
 import { formatFullDate, formatLongDate, greeting } from "@/lib/dates";
@@ -23,8 +22,6 @@ function countdownText(days: number): string {
 
 export default async function DashboardPage() {
   const student = await requireStudent();
-  // First visit since the adaptive planner: set up a study schedule first.
-  if (!student.onboardedAt) redirect("/schedule?setup=1");
   const db = await getDb();
   const [state, loaded] = await Promise.all([loadStudentState(db, student.id), loadStudentModel(db, student)]);
   const today = loaded.today;
@@ -35,6 +32,11 @@ export default async function DashboardPage() {
   const sectionTitle = (id: string) => state.sections.find((s) => s.id === id)?.title ?? id;
   const recent = state.rated.slice(0, 5);
   const totalPlanned = progress.reduce((m, p) => m + p.total, 0);
+  const progressById = new Map(progress.map((p) => [p.section.id, { done: p.done, total: p.total }]));
+  const dueToday = state.pending.filter((i) => i.dueDate <= today);
+  const due = dueToday.length
+    ? { problemId: dueToday[0].problemId, href: `/practice/${encodeURIComponent(dueToday[0].problemId)}?item=${dueToday[0].id}`, count: dueToday.length }
+    : null;
 
   return (
     <PageTransition>
@@ -46,6 +48,11 @@ export default async function DashboardPage() {
               {greeting()}, {student.firstName}.
             </h1>
             <p className="lede">Your {settings.examName} preparation at a glance.</p>
+            {loaded.hasSchedule ? null : (
+              <p className="small text-2 lede-note">
+                Sessions use the default study times: 30 minutes, Monday to Friday. <Link href="/schedule">Set your study times</Link>
+              </p>
+            )}
           </div>
         </header>
 
@@ -112,7 +119,7 @@ export default async function DashboardPage() {
         ) : null}
 
         <div className="dash-main">
-          <TodayCard loaded={loaded} />
+          <StudyCard loaded={loaded} progress={progressById} firstTime={stats.completed === 0} due={due} />
 
           <section className="card" aria-labelledby="recent-title">
             <h2 id="recent-title" className="card-title">

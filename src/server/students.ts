@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { DB, Q } from "../db/client";
 import { assignments, attempts, notes, reviewItems, students, type Student } from "../db/schema";
 import { nameKey, normalizeName } from "../lib/names";
@@ -49,15 +49,6 @@ export async function saveSchedule(q: Q, id: string, value: ScheduleValue): Prom
       onboardedAt: sql`coalesce(${students.onboardedAt}, now())`,
     })
     .where(eq(students.id, id));
-}
-
-/** Rated problems so far: students with history see a one-time note about the upgrade. */
-export async function ratedAttemptCount(q: Q, id: string): Promise<number> {
-  const [row] = await q
-    .select({ n: count() })
-    .from(attempts)
-    .where(and(eq(attempts.studentId, id), sql`${attempts.ratedAt} is not null`));
-  return row?.n ?? 0;
 }
 
 export type RenameResult = { ok: true } | { ok: false; error: string } | { ok: false; conflictWith: Student };

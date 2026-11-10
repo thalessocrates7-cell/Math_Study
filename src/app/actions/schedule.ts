@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
@@ -26,6 +25,5 @@ export async function saveScheduleAction(_prev: ScheduleState, formData: FormDat
   if (!res.ok) return { error: res.error, field: res.field };
   await saveSchedule(db, student.id, res.value);
   revalidatePath("/", "layout");
-  if (formData.get("setup") === "1") redirect("/dashboard");
   return { saved: true };
 }
