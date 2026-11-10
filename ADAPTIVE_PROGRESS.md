@@ -23,6 +23,29 @@ Last updated: **2026-11-09 (Mon)**. Exam 4 is **Wed 2026-12-02**.
   - `npx next build`, `npm run contrast`, `npm run content:check`.
 - **Browser-checked** at 1440 px and 390 px, light and dark: sign-in, setup, dashboard card, session page (plan, in progress, done, Keep going), practice with Pause and the timer, Settings, and the form's error state.
 
+## Dashboard fix and practice navigation (2026-11-09 evening): waiting for your check
+
+**The bug** (`Downloads\MTH263_Dashboard_Navigation_Bug_Report.md`): on the live site and locally, Dashboard "opened Settings".
+- Cause: since stage 2, any student without a saved schedule (`onboarded_at` null, which is every existing student after migration 0001) was sent to `/schedule?setup=1`.
+- The sidebar marks `/schedule` as Settings.
+- Separately, the dev server on 3263 had started before migration 0002, so its Dashboard crashed. It was restarted; backup in `.data\pglite-backup-2026-11-09`.
+
+**Branch `fix/dashboard-opens`** (from `main`, pushed; worktree `C:\Users\thale\mth263-fix`; no migration). Only this branch is meant to go live, after your check.
+- Sign-in, Dashboard and Today's Session no longer force schedule setup. Sessions use the default times (30 min, Mon–Fri) until a student saves their own. A quiet note on the Dashboard links to the schedule.
+- The old Dashboard card ("Recommended next", Start/Continue Studying) is back. Its button starts or continues today's session. It's built from `src/components/session/StudyCard.tsx` and `src/lib/study-card.ts`.
+- `TodayCard` is gone, and so are the setup view and the one-time "We've upgraded your study plan" note.
+- The sidebar and tab bar mark a practice problem under where it was opened from (`src/lib/nav.ts`): session → Dashboard, `?item=` → Review Queue, else → Study Plan.
+- Checks: `tsc`, 87 Vitest tests, `next build`, contrast, and 22 Playwright specs, including the new `e2e/6-nav.spec.ts` for the bug report's acceptance criteria. Vercel preview builds passed. Browser-checked at 1440 and 390 px, light and dark.
+
+**On `adaptive`** (pushed; not live). The fix above is merged in, plus the practice-page navigation from `reference_nav.png` and `Downloads\MTH263_Practice_Exit_Return_to_Study_Section.md`:
+- **X** next to the level badge: from a session it goes to `/session`. Otherwise it goes to the problem's own section and level, on its row (`exitHref` in `src/lib/checklist.ts`). The row scrolls into view and is briefly marked.
+- **Previous / "Core 1 of 9" / Next** under the rating, only for problems opened from the Study Plan. They move without rating or ticking. Past either end they do what X does: you said yes to "Previous on the first problem goes back like X". If you meant greyed out, it's a one-line change in `practice/[problemId]/page.tsx`.
+- Checks: 102 Vitest tests, contrast, content check, and 29 Playwright specs, including `e2e/7-practice-nav.spec.ts`.
+
+**Servers left running** (each in its own minimized window): 3263 your dev server (`adaptive`), 3264 my test server (`adaptive`, scratch data), 3265 the fix branch (a copy of your local data).
+
+**Next:** you check both. On your OK, merge `fix/dashboard-opens` into `main` and push. It has no migration, but ask first; it goes live. Then remove the worktree with `git worktree remove ..\mth263-fix`.
+
 ## Built on `adaptive` after the last push (2026-11-09; NOT live yet)
 
 - **Immediate next problem:** rating Got it / Shaky / Lost saves, then opens the next problem. There is no feedback panel or Next button. A "Continue" link shows only if the next page takes over 6 seconds. (`src/components/practice/Workspace.tsx`.)
