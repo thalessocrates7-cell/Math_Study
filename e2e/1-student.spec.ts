@@ -45,21 +45,16 @@ test("practice: hint, answer and worked solution are logged; Lost serves an easi
   await expect(details).toContainText("1 of");
   await expect(details.getByText("Yes")).toHaveCount(2);
 
+  // Rating saves, then opens the next problem by itself: no feedback panel, no "Next problem" button.
   await page.getByRole("button", { name: /^Lost/ }).click();
-  const status = page.getByRole("status").filter({ hasText: "easier problem" });
-  await expect(status).toBeVisible();
-  const next = page.getByRole("link", { name: /Try an easier problem/ });
-  await expect(next).toBeFocused();
-  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /Review Queue\s*1 due/ })).toBeVisible();
-
-  await next.click();
   await expect(page).toHaveURL(/\/practice\/4\.10-.+\?item=/);
   await expect(page.getByText("Easier problem on the same idea")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Try an easier problem|Next problem/ })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /Review Queue\s*1 due/ })).toBeVisible();
+
   await page.getByRole("button", { name: /^Got it/ }).click();
-  const back = page.getByRole("link", { name: "Next problem" });
-  await expect(back).toBeVisible();
-  await back.click();
   await expect(page).toHaveURL(/\/practice\/4\.10-[^?]+$/);
+  await expect(page.getByRole("link", { name: "Next problem" })).toHaveCount(0);
 });
 
 test("review queue, progress and notes reflect the ratings", async ({ page }) => {

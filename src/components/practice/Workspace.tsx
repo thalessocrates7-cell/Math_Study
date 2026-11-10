@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ArrowRight, BookOpenCheck, Check, ChevronDown, Eye, Info, Lightbulb, Pause, Play, WavesHorizontal, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { assistAction, openAttemptAction, pauseSessionAction, rateAction } from "@/app/actions/practice";
 import type { AttemptState, RateOutcome } from "@/server/practice";
@@ -63,7 +64,9 @@ export function Workspace(props: WorkspaceProps) {
   const [pending, setPending] = useState<Rating | null>(null);
   const [outcome, setOutcome] = useState<RateOutcome | null>(null);
   const [rateError, setRateError] = useState<string | null>(null);
-  const continueRef = useRef<HTMLAnchorElement>(null);
+  const router = useRouter();
+  // Shown only if the rating was saved but the next page is slow to open.
+  const [slowNext, setSlowNext] = useState(false);
 
   // The quiet timer counts on-screen time only: not while paused, hidden, or once rated.
   const [paused, setPaused] = useState(false);
@@ -107,9 +110,13 @@ export function Workspace(props: WorkspaceProps) {
     };
   }, [problemId, itemId, sessionItemId, hintsHtml.length]);
 
+  // The rating is saved, so go straight to the next problem. A "Continue" link appears only if that stalls.
   useEffect(() => {
-    if (outcome) continueRef.current?.focus();
-  }, [outcome]);
+    if (!outcome) return;
+    router.push(outcome.nextHref, { transitionTypes: ["nav-forward"] });
+    const t = window.setTimeout(() => setSlowNext(true), 6000);
+    return () => window.clearTimeout(t);
+  }, [outcome, router]);
 
   function log(kind: "hint" | "answer" | "solution", n = 1) {
     attemptPromise.current
@@ -308,24 +315,17 @@ export function Workspace(props: WorkspaceProps) {
           </div>
         ) : null}
         {outcome ? (
-          <div className="confirm" role="status">
-            <p>{outcome.message}</p>
-            <div className="cluster">
-              <Link ref={continueRef} className="btn btn-primary" href={outcome.nextHref} transitionTypes={["nav-forward"]}>
-                {outcome.nextLabel}
-                <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-              {sessionItemId && outcome.nextHref !== "/session" ? (
-                <Link className="btn btn-ghost" href="/session">
-                  Today&apos;s session
-                </Link>
-              ) : !sessionItemId && outcome.rating !== "got_it" ? (
-                <Link className="btn btn-ghost" href="/review">
-                  View review queue
-                </Link>
-              ) : null}
-            </div>
-          </div>
+          <p className="sr-only" role="status">
+            Saved. Opening the next problem.
+          </p>
+        ) : null}
+        {outcome && slowNext ? (
+          <p className="small" style={{ marginTop: 12 }}>
+            <Link className="btn btn-secondary btn-sm" href={outcome.nextHref} transitionTypes={["nav-forward"]}>
+              Continue
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          </p>
         ) : null}
       </section>
 
