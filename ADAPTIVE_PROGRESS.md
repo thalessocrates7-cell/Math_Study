@@ -23,6 +23,19 @@ Last updated: **2026-11-09 (Mon)**. Exam 4 is **Wed 2026-12-02**.
   - `npx next build`, `npm run contrast`, `npm run content:check`.
 - **Browser-checked** at 1440 px and 390 px, light and dark: sign-in, setup, dashboard card, session page (plan, in progress, done, Keep going), practice with Pause and the timer, Settings, and the form's error state.
 
+## Built on `adaptive` after the last push (2026-11-09; NOT live yet)
+
+- **Immediate next problem:** rating Got it / Shaky / Lost saves, then opens the next problem. There is no feedback panel or Next button. A "Continue" link shows only if the next page takes over 6 seconds. (`src/components/practice/Workspace.tsx`.)
+- **Study Plan redesign** (the spec in `Downloads\MTH263_Study_Plan_Prototype_Specification.md`):
+  - Foundation / Core / Challenge selector, one section at a time, a checkbox per problem, saved per student. The address is `/plan?section=5.3&level=challenge`.
+  - Rating a problem ticks it. Ticked-but-unrated problems rank last when sessions pick new work.
+  - The sidebar has a Dark Mode switch, Settings below it, and Sign out at the bottom; the name card is gone.
+  - `/plan/5.3` forwards to the new page. The dashboard bars and the practice page's "Challenge 2 of 5" use the same lists.
+- **Migration `0002_checks.sql`:** new table `problem_checks`, plus a data step that ticks every problem already rated. Upgrade-tested on an old-schema database (3 rated ticked; skipped and unrated not; no rows lost).
+- **Before pushing to `main`:** it changes the live database, so take a backup first (CSV export from `/admin` plus a Neon branch) and ask the user.
+- **Checks:** `npx tsc --noEmit` clean, `npx vitest run` 86 tests, `npx next build` OK, `npm run contrast` OK. Browser-checked at 1440 and 390 px, light and dark. The Playwright specs (`e2e/`) were updated and added but **not run**.
+- **Not done:** an engine unit test that ticked-unrated problems rank last (the rule is in `session-builder.ts` and `regressive.ts`); the stage 3 questions are still open.
+
 ## Resume
 
 1. `cd C:\Users\thale\mth263-study`, then `git switch adaptive` (you should already be on it).
