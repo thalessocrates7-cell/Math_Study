@@ -8,9 +8,11 @@ import type { DB, Q } from "../db/client";
 import { attempts, type AttemptOrigin, type ItemTrack, sections, sessionItems, type SessionItem, type Student, studySessions } from "../db/schema";
 import { dayPlan } from "../lib/availability";
 import { extraOptions, planSession } from "../lib/engine";
+import { type Prep, practiceLink } from "../lib/prep";
 import { type ReasonLookup, reasonText } from "../lib/reasons";
 import type { PlannedItem } from "../lib/session-builder";
 import { type Loaded, loadStudentModel, type SessionWithItems } from "./model";
+import { prepOfProblem } from "./prep";
 
 /** "How much time do you have?" choices for a session that isn't in the schedule. */
 export const SESSION_LENGTHS = [15, 30, 45, 60] as const;
@@ -44,8 +46,9 @@ export function nextOptional(items: SessionItem[]): SessionItem | null {
   return items.find((i) => !i.essential && isOpen(i)) ?? null;
 }
 
-export function practiceHref(item: Pick<SessionItem, "id" | "problemId">): string {
-  return `/practice/${encodeURIComponent(item.problemId)}?s=${item.id}`;
+/** A session item's practice page, inside its preparation's pages (/final-exam/practice/... for the Final Exam). */
+export function practiceHref(item: Pick<SessionItem, "id" | "problemId">, prep: Prep = "exam4"): string {
+  return practiceLink(prep, item.problemId, { s: item.id });
 }
 
 export type SessionProgress = {
@@ -99,11 +102,12 @@ export function previewNextSession(loaded: Loaded, minutes?: number | null): Nex
 }
 
 /**
- * Starts today's next session (or returns the one already open). Safe to call twice: the unique
- * (student, day, slot) index means a double click or a second tab can't create two sessions.
+ * Starts today's next session of one preparation (or returns the one already open). Safe to call
+ * twice: the unique (student, preparation, day, slot) index means a double click or a second tab
+ * can't create two sessions. Integration Review and the Final Exam number their sessions separately.
  */
-export async function startSession(db: DB, student: Student, minutes?: number | null, now = new Date()): Promise<string> {
-  const loaded = await loadStudentModel(db, student, now);
+export async function startSession(db: DB, student: Student, minutes?: number | null, now = new Date(), prep: Prep = "exam4"): Promise<string> {
+  const loaded = await loadStudentModel(db, student, now, prep);
   const open = openSessionOf(loaded.todaySessions);
   if (open) return open.session.id;
   const next = previewNextSession(loaded, minutes);
@@ -113,6 +117,7 @@ export async function startSession(db: DB, student: Student, minutes?: number | 
       .insert(studySessions)
       .values({
         studentId: student.id,
+        preparation: prep,
         day: loaded.today,
         slot: next.slot,
         budgetMinutes: next.minutes,
@@ -125,7 +130,14 @@ export async function startSession(db: DB, student: Student, minutes?: number | 
       const [existing] = await tx
         .select({ id: studySessions.id })
         .from(studySessions)
-        .where(and(eq(studySessions.studentId, student.id), eq(studySessions.day, loaded.today), eq(studySessions.slot, next.slot)));
+        .where(
+          and(
+            eq(studySessions.studentId, student.id),
+            eq(studySessions.preparation, prep),
+            eq(studySessions.day, loaded.today),
+            eq(studySessions.slot, next.slot),
+          ),
+        );
       return existing.id;
     }
     const all = next.bonus ? [...next.items, next.bonus] : next.items;
@@ -148,7 +160,8 @@ export async function startSession(db: DB, student: Student, minutes?: number | 
   });
 }
 
-async function ownSession(q: Q, studentId: string, sessionId: string) {
+/** A student's own session (or null). */
+export async function ownSession(q: Q, studentId: string, sessionId: string) {
   const [row] = await q
     .select()
     .from(studySessions)
@@ -215,7 +228,10 @@ export function keepGoingFor(loaded: Loaded): PlannedItem[] {
  * of the current options (so a stale or edited form can't add anything else).
  */
 export async function addKeepGoing(db: DB, student: Student, problemId: string, now = new Date()): Promise<SessionItem | null> {
-  const loaded = await loadStudentModel(db, student, now);
+  // The pick belongs to its problem's preparation, and so does the session it joins.
+  const prep = await prepOfProblem(db, problemId);
+  if (!prep) return null;
+  const loaded = await loadStudentModel(db, student, now, prep);
   const latest = loaded.todaySessions[loaded.todaySessions.length - 1];
   if (!latest) return null;
   const already = latest.items.find((i) => i.problemId === problemId && isOpen(i));

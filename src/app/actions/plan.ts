@@ -2,9 +2,8 @@
 
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
+import { PROBLEM_ID_RE as ID_RE } from "@/lib/ids";
 import { setCheck } from "@/server/checklist";
-
-const ID_RE = /^[0-9]+\.[0-9]+-[A-Za-z0-9]+$/;
 
 /** The Study Plan checkbox: saves a tick (or removes it) on the student's account. */
 export async function toggleCheckAction(problemId: string, checked: boolean): Promise<{ ok: true } | { error: string }> {

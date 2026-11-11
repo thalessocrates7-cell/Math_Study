@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
 import { requireStudent } from "@/lib/auth";
+import { PROBLEM_ID_RE as ID_RE, UUID_RE } from "@/lib/ids";
 import {
   openAttempt,
   PracticeError,
@@ -15,8 +16,6 @@ import {
 } from "@/server/practice";
 import { setSessionPaused } from "@/server/sessions";
 
-const ID_RE = /^[0-9]+\.[0-9]+-[A-Za-z0-9]+$/;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const uuidOrNull = (v: string | null | undefined) => (v && UUID_RE.test(v) ? v : null);
 
 export async function openAttemptAction(problemId: string, itemId: string | null, sessionItemId: string | null = null): Promise<AttemptState | null> {

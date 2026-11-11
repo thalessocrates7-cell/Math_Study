@@ -34,6 +34,8 @@ export const problemSource = pgEnum("problem_source", ["openstax", "original", "
 export const sessionStatus = pgEnum("session_status", ["active", "paused", "completed"]);
 export const itemTrack = pgEnum("item_track", ["challenge", "reinforcement", "new", "lookback", "extra"]);
 export const itemStatus = pgEnum("item_status", ["pending", "active", "done", "skipped", "dropped"]);
+/** The study environment a section (and a study session) belongs to: Integration Review or the Final Exam (src/lib/prep.ts). */
+export const preparation = pgEnum("preparation", ["exam4", "final"]);
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
@@ -52,6 +54,10 @@ export const students = pgTable("students", {
   supplementaryOptIn: boolean("supplementary_opt_in").notNull().default(false),
   /** When the student first saved a study schedule; null shows the setup screen. */
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
+  /** The Final Exam's own weekly study pattern (null until set; the default one is used meanwhile). */
+  finalAvailability: jsonb("final_availability").$type<Availability | null>(),
+  /** The student's own Final Exam date (e.g. a make-up); null means the class date in settings. */
+  finalExamDateOverride: date("final_exam_date_override", { mode: "string" }),
   createdAt: createdAt(),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -64,6 +70,8 @@ export const sections = pgTable("sections", {
   sort: integer("sort").notNull(),
   url: text("url").notNull(),
   kind: sectionKind("kind").notNull().default("core"),
+  /** Integration Review (exam4) or the Final Exam. A problem's attempts, reviews and ticks belong to its section's. */
+  preparation: preparation("preparation").notNull().default("exam4"),
   /** Set when an admin edits the section, so re-seeding never overwrites their change. */
   editedByAdmin: boolean("edited_by_admin").notNull().default(false),
 });
@@ -207,6 +215,8 @@ export const studySessions = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     studentId: uuid("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    /** Integration Review (exam4) or the Final Exam: each has its own sessions, numbered from 1 each day. */
+    preparation: preparation("preparation").notNull().default("exam4"),
     /** New York calendar day the session belongs to. */
     day: date("day", { mode: "string" }).notNull(),
     /** 1 for the day's first session, 2 for the second, ... */
@@ -221,7 +231,7 @@ export const studySessions = pgTable(
   },
   (t) => [
     // Starting twice (a double click, two tabs) can't create two sessions in the same slot.
-    uniqueIndex("study_sessions_slot_idx").on(t.studentId, t.day, t.slot),
+    uniqueIndex("study_sessions_slot_idx").on(t.studentId, t.preparation, t.day, t.slot),
   ],
 );
 
@@ -269,6 +279,10 @@ export const settings = pgTable("settings", {
   examDate: date("exam_date", { mode: "string" }).notNull(),
   /** Overrides for the study-plan rules (src/lib/rules.ts); anything missing uses the default. */
   rules: jsonb("rules").$type<RulesOverride>().notNull().default({}),
+  /** The Final Exam's name, date and 24-hour New York time; null uses FINAL_EXAM in content/final-exam.ts. */
+  finalExamName: text("final_exam_name"),
+  finalExamDate: date("final_exam_date", { mode: "string" }),
+  finalExamTime: text("final_exam_time"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -297,3 +311,4 @@ export type ReviewReason = ReviewItem["reason"];
 export type AttemptOrigin = Attempt["origin"];
 export type ItemTrack = SessionItem["track"];
 export type ItemStatus = SessionItem["status"];
+export type Preparation = Section["preparation"];

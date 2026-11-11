@@ -3,6 +3,7 @@
  * Pure helpers (no database), so the page, the server and the tests share the same rules.
  */
 import type { Difficulty } from "../../content/types";
+import { type Prep, routesFor } from "./prep";
 
 export type Level = "foundation" | "core" | "challenge";
 export const LEVELS: Level[] = ["foundation", "core", "challenge"];
@@ -48,8 +49,9 @@ export function defaultSection(sectionIds: readonly string[], currentUnitId: str
   return sectionIds[0] ?? null;
 }
 
-export function planHref(sectionId: string, level: Level): string {
-  return `/plan?section=${encodeURIComponent(sectionId)}&level=${level}`;
+/** The Study Plan at one section and level (the Final Exam's own Study Plan for prep "final"). */
+export function planHref(sectionId: string, level: Level, prep: Prep = "exam4"): string {
+  return `${routesFor(prep).plan}?section=${encodeURIComponent(sectionId)}&level=${level}`;
 }
 
 /** The id of a problem's row in the Study Plan, so a link can land on that row. */
@@ -61,9 +63,9 @@ export const planRowId = (problemId: string): string => `p-${problemId}`;
  * Study Plan, on its row. Built from the problem's own data, so a Review Queue problem returns to
  * the section it belongs to.
  */
-export function exitHref(p: { sessionId: string | null; sectionId: string; difficulty: Difficulty; problemId: string }): string {
-  if (p.sessionId) return "/session";
-  return `${planHref(p.sectionId, difficultyToLevel(p.difficulty))}#${planRowId(p.problemId)}`;
+export function exitHref(p: { sessionId: string | null; sectionId: string; difficulty: Difficulty; problemId: string; prep?: Prep }): string {
+  if (p.sessionId) return routesFor(p.prep ?? "exam4").session;
+  return `${planHref(p.sectionId, difficultyToLevel(p.difficulty), p.prep)}#${planRowId(p.problemId)}`;
 }
 
 /** The problems before and after `id` in a list (null at either end, or when `id` isn't in it). */

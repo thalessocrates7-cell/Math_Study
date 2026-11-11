@@ -3645,3 +3645,97 @@ details.table-view summary {
     transition: none;
   }
 }
+
+/* ============================================================ Final Exam: the switch between environments, coverage */
+/* Phone top bar: the way into the Final Exam (and back to Integration Review); the tab bar keeps five items. */
+.topbar-actions {
+  flex-wrap: nowrap;
+}
+
+.topbar-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  white-space: nowrap;
+  text-decoration: none;
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease);
+}
+
+.topbar-switch:hover {
+  border-color: var(--border-strong);
+  background: var(--accent-soft);
+  color: var(--accent-soft-text);
+}
+
+.topbar-switch svg {
+  flex: none;
+}
+
+/* Very narrow phones: the icon alone (the link keeps its full accessible name). */
+@media (max-width: 359px) {
+  .topbar-switch {
+    padding: 0 12px;
+  }
+  .topbar-switch-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+.coverage-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+@media (min-width: 720px) {
+  .coverage-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.coverage-stat {
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.coverage-stat dt {
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.coverage-stat dd {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: var(--text-xl);
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.coverage-sub {
+  margin-top: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-switch {
+    transition: none;
+  }
+}

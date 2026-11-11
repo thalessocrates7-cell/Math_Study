@@ -8,6 +8,7 @@ import { toggleCheckAction } from "@/app/actions/plan";
 import { DifficultyBadge, RatingPill } from "@/components/Badges";
 import { ProgressBar } from "@/components/Progress";
 import { checklistFor, checklistProgress, difficultyToLevel, levelToDifficulty, planHref, planRowId, type Level } from "@/lib/checklist";
+import { type Prep, routesFor } from "@/lib/prep";
 
 export type PlanSection = { id: string; title: string; objective: string };
 export type PlanProblem = {
@@ -33,8 +34,12 @@ export function StudyPlanView(props: {
   checked: string[];
   initialSection: string;
   initialLevel: Level;
+  /** Integration Review or the Final Exam: links stay inside that environment's pages. */
+  prep?: Prep;
 }) {
   const { sections, problems } = props;
+  const prep = props.prep ?? "exam4";
+  const routes = routesFor(prep);
   const [sectionId, setSectionId] = useState(props.initialSection);
   const [level, setLevel] = useState<Level>(props.initialLevel);
   const [checked, setChecked] = useState(() => new Set(props.checked));
@@ -60,8 +65,8 @@ export function StudyPlanView(props: {
       first.current = false;
       return;
     }
-    window.history.replaceState(null, "", planHref(sectionId, level));
-  }, [sectionId, level]);
+    window.history.replaceState(null, "", planHref(sectionId, level, prep));
+  }, [sectionId, level, prep]);
 
   const section = sections.find((s) => s.id === sectionId) ?? sections[0];
   const d = levelToDifficulty(level);
@@ -183,7 +188,7 @@ export function StudyPlanView(props: {
                           <input type="checkbox" checked={on} onChange={(e) => toggle(p.id, e.target.checked)} />
                           <span className="sr-only">{p.label} done</span>
                         </label>
-                        <Link className="check-title" href={`/practice/${encodeURIComponent(p.id)}`}>
+                        <Link className="check-title" href={routes.practice(p.id)}>
                           {p.label}
                         </Link>
                         <DifficultyBadge d={p.difficulty} />

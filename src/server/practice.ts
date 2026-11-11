@@ -28,8 +28,10 @@ import { followUpsToClose, ratingMessage, scheduleAfterRating, type ScheduledRat
 import { DEFAULT_RULES } from "../lib/rules";
 import { overflowToDrop, type PlannedItem } from "../lib/session-builder";
 import { difficultyToLevel, neighbors, nextUnchecked, planHref } from "../lib/checklist";
+import { type Prep, practiceLink, routesFor } from "../lib/prep";
 import { loadChecks } from "./checklist";
 import { loadStudentModel } from "./model";
+import { prepOfSection, prepProblemIds } from "./prep";
 import { completeIfDone, insertItemsAfter, nextEssential, nextOptional, practiceHref, sessionItemsOf, TRACK_ORIGIN } from "./sessions";
 
 export class PracticeError extends Error {
@@ -174,11 +176,13 @@ export async function rateAttempt(
     const problem = await getProblem(tx, attempt.problemId);
     if (!problem) throw new PracticeError("not_found");
     const today = todayISO(now);
+    // The problem's preparation: everything after the rating stays inside it (its plan, its pages).
+    const prep: Prep = (await prepOfSection(tx, problem.sectionId)) ?? "exam4";
 
     if (attempt.ratedAt && attempt.rating) {
       const next = attempt.sessionItemId
-        ? await nextInSession(tx, studentId, attempt.sessionItemId)
-        : await nextAfter(tx, { studentId, problem, attempt, today, easierItem: null });
+        ? await nextInSession(tx, studentId, attempt.sessionItemId, prep)
+        : await nextAfter(tx, { studentId, problem, attempt, today, easierItem: null, prep });
       return { rating: attempt.rating, message: "Your rating was already saved.", ...next, dueDate: attempt.nextReviewDate, alreadyRated: true };
     }
 
@@ -262,7 +266,7 @@ export async function rateAttempt(
 
     // The planner's view after this rating.
     const [student] = await tx.select().from(students).where(eq(students.id, studentId));
-    const loaded = await loadStudentModel(tx, student, now);
+    const loaded = await loadStudentModel(tx, student, now, prep);
     let model = loaded.model;
 
     // Class timing, from each student's first try at a problem (later tries are faster).
@@ -290,7 +294,7 @@ export async function rateAttempt(
     const message = ratingMessage(rating, easierItem ? result : { ...result, nextProblemId: null }, { solutionViewed: attempt.solutionViewed });
     const base = { rating, message, dueDate: own?.dueDate ?? null, alreadyRated: false };
 
-    if (!item) return { ...base, ...(await nextAfter(tx, { studentId, problem, attempt, today, easierItem })) };
+    if (!item) return { ...base, ...(await nextAfter(tx, { studentId, problem, attempt, today, easierItem, prep })) };
 
     // ---- inside a study session
     await tx.update(sessionItems).set({ status: "done", doneAt: now, attemptId: attempt.id }).where(eq(sessionItems.id, item.id));
@@ -345,26 +349,26 @@ export async function rateAttempt(
       }
     }
     const sessionComplete = await completeIfDone(tx, item.sessionId, now);
-    return { ...base, ...nextFromItems(items, item, easierItem !== null), sessionComplete };
+    return { ...base, ...nextFromItems(items, item, easierItem !== null, prep), sessionComplete };
   });
 }
 
 /** Where Continue goes inside a session: the next planned item, else the next optional one, else the summary. */
-function nextFromItems(items: SessionItem[], current: SessionItem, easierNext: boolean): { nextHref: string; nextLabel: string } {
+function nextFromItems(items: SessionItem[], current: SessionItem, easierNext: boolean, prep: Prep): { nextHref: string; nextLabel: string } {
   const next = current.essential ? nextEssential(items) : nextOptional(items.filter((i) => i.position > current.position));
-  if (!next) return { nextHref: "/session", nextLabel: current.essential ? "See today's session" : "Back to today's session" };
-  if (easierNext && next.track === "reinforcement") return { nextHref: practiceHref(next), nextLabel: "Try an easier problem" };
+  if (!next) return { nextHref: routesFor(prep).session, nextLabel: current.essential ? "See today's session" : "Back to today's session" };
+  if (easierNext && next.track === "reinforcement") return { nextHref: practiceHref(next, prep), nextLabel: "Try an easier problem" };
   const label = next.track === "lookback" ? "Next: a look-back" : next.track === "reinforcement" ? "Next: reinforcement" : "Next problem";
-  return { nextHref: practiceHref(next), nextLabel: label };
+  return { nextHref: practiceHref(next, prep), nextLabel: label };
 }
 
-async function nextInSession(q: Q, studentId: string, sessionItemId: string): Promise<{ nextHref: string; nextLabel: string }> {
+async function nextInSession(q: Q, studentId: string, sessionItemId: string, prep: Prep): Promise<{ nextHref: string; nextLabel: string }> {
   const [item] = await q
     .select()
     .from(sessionItems)
     .where(and(eq(sessionItems.id, sessionItemId), eq(sessionItems.studentId, studentId)));
-  if (!item) return { nextHref: "/session", nextLabel: "See today's session" };
-  return nextFromItems(await sessionItemsOf(q, item.sessionId), item, false);
+  if (!item) return { nextHref: routesFor(prep).session, nextLabel: "See today's session" };
+  return nextFromItems(await sessionItemsOf(q, item.sessionId), item, false, prep);
 }
 
 /** Active problems of one section and level, in textbook order (the Study Plan's list). */
@@ -378,33 +382,42 @@ async function levelList(q: Q, sectionId: string, difficulty: Problem["difficult
 
 async function nextAfter(
   q: Q,
-  ctx: { studentId: string; problem: Problem; attempt: Attempt; today: string; easierItem: ReviewItem | null },
+  ctx: { studentId: string; problem: Problem; attempt: Attempt; today: string; easierItem: ReviewItem | null; prep: Prep },
 ): Promise<{ nextHref: string; nextLabel: string }> {
-  const { studentId, problem, attempt, today, easierItem } = ctx;
+  const { studentId, problem, attempt, today, easierItem, prep } = ctx;
+  const routes = routesFor(prep);
   if (easierItem) {
-    return { nextHref: `/practice/${encodeURIComponent(easierItem.problemId)}?item=${easierItem.id}`, nextLabel: "Try an easier problem" };
+    return { nextHref: practiceLink(prep, easierItem.problemId, { item: easierItem.id }), nextLabel: "Try an easier problem" };
   }
   let cameFrom: ReviewItem | undefined;
   if (attempt.reviewItemId) {
     [cameFrom] = await q.select().from(reviewItems).where(eq(reviewItems.id, attempt.reviewItemId));
   }
-  // Review practice (except an "easier" detour, which returns to the plan) continues through the queue.
+  // Review practice (except an "easier" detour, which returns to the plan) continues through the queue
+  // of the same preparation.
   if (cameFrom && cameFrom.reason !== "easier") {
     const [due] = await q
       .select({ id: reviewItems.id, problemId: reviewItems.problemId })
       .from(reviewItems)
-      .where(and(eq(reviewItems.studentId, studentId), eq(reviewItems.status, "pending"), lte(reviewItems.dueDate, today)))
+      .where(
+        and(
+          eq(reviewItems.studentId, studentId),
+          eq(reviewItems.status, "pending"),
+          lte(reviewItems.dueDate, today),
+          inArray(reviewItems.problemId, prepProblemIds(q, prep)),
+        ),
+      )
       .orderBy(asc(reviewItems.dueDate), asc(reviewItems.createdAt))
       .limit(1);
-    if (due) return { nextHref: `/practice/${encodeURIComponent(due.problemId)}?item=${due.id}`, nextLabel: "Next review problem" };
-    return { nextHref: "/review", nextLabel: "Back to the review queue" };
+    if (due) return { nextHref: practiceLink(prep, due.problemId, { item: due.id }), nextLabel: "Next review problem" };
+    return { nextHref: routes.review, nextLabel: "Back to the review queue" };
   }
   // Back on the Study Plan's list: the next unticked problem at the same level, else the plan itself.
   const base = cameFrom?.sourceProblemId ? ((await getProblem(q, cameFrom.sourceProblemId)) ?? problem) : problem;
   const [list, checked] = await Promise.all([levelList(q, base.sectionId, base.difficulty), loadChecks(q, studentId)]);
   const nextId = nextUnchecked(list, checked, base.id);
-  if (nextId) return { nextHref: `/practice/${encodeURIComponent(nextId)}`, nextLabel: "Next problem" };
-  return { nextHref: planHref(base.sectionId, difficultyToLevel(base.difficulty)), nextLabel: "Back to the Study Plan" };
+  if (nextId) return { nextHref: practiceLink(prep, nextId), nextLabel: "Next problem" };
+  return { nextHref: planHref(base.sectionId, difficultyToLevel(base.difficulty), prep), nextLabel: "Back to the Study Plan" };
 }
 
 export type HistoryRow = {
@@ -447,6 +460,8 @@ export async function saveNote(q: Q, studentId: string, problemId: string, text:
 
 export type WorkspaceData = {
   problem: Problem;
+  /** The preparation the problem belongs to (its section's). */
+  prep: Prep;
   section: { id: string; title: string; objectives: string[]; concepts: Array<{ id: string; label: string }> };
   position: number | null;
   total: number;
@@ -501,6 +516,7 @@ export async function workspaceData(q: Q, studentId: string, problemId: string, 
 
   return {
     problem,
+    prep: section.preparation,
     section: { id: section.id, title: section.title, objectives: section.objectives, concepts: section.concepts },
     position: index >= 0 ? index + 1 : null,
     total: plan.length,

@@ -3,6 +3,7 @@ import {
   ALL_PROBLEMS,
   DEFAULT_EXAM,
   DEFAULT_PLAN,
+  FINAL_SECTIONS,
   SECTIONS,
   SMALL_PLAN,
   type Difficulty,
@@ -49,8 +50,10 @@ function toRow(p: ProblemSeed): typeof s.problems.$inferInsert {
  * content/ unless an admin edited them.
  */
 export async function seedDatabase(db: DB, opts: { force?: boolean } = {}): Promise<{ inserted: number }> {
-  for (const sec of SECTIONS) {
-    const values = { title: sec.title, objectives: sec.objectives, concepts: sec.concepts, sort: sec.sort, url: sec.url, kind: sec.kind };
+  // Integration Review sections, then the Final Exam's chapters (their own preparation).
+  const all = [...SECTIONS.map((sec) => ({ sec, preparation: "exam4" as const })), ...FINAL_SECTIONS.map((sec) => ({ sec, preparation: "final" as const }))];
+  for (const { sec, preparation } of all) {
+    const values = { title: sec.title, objectives: sec.objectives, concepts: sec.concepts, sort: sec.sort, url: sec.url, kind: sec.kind, preparation };
     await db
       .insert(s.sections)
       .values({ id: sec.id, ...values })

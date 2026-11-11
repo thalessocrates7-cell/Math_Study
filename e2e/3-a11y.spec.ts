@@ -4,7 +4,26 @@ import { E2E_ADMIN_CODE } from "../playwright.config";
 import { adminSignIn, horizontalOverflow, signIn } from "./helpers";
 
 const PUBLIC = ["/", "/signin", "/admin"];
-const STUDENT = ["/dashboard", "/session", "/plan", "/plan?section=5.3&level=challenge", "/practice/5.2-72", "/practice/5.1-39", "/review", "/progress", "/settings", "/schedule"];
+const STUDENT = [
+  "/dashboard",
+  "/session",
+  "/plan",
+  "/plan?section=5.3&level=challenge",
+  "/practice/5.2-72",
+  "/practice/5.1-39",
+  "/review",
+  "/progress",
+  "/settings",
+  "/schedule",
+  // The Final Exam's own pages (before its questions are added: the honest empty states).
+  "/final-exam",
+  "/final-exam/plan",
+  "/final-exam/review",
+  "/final-exam/progress",
+  "/final-exam/session",
+  "/final-exam/settings",
+  "/final-exam/schedule",
+];
 const ADMIN = ["/admin/dashboard", "/admin/students", "/admin/problems", "/admin/problems/5.2-72", "/admin/plan", "/admin/settings"];
 const SHOTS = "test-results/shots-e2e";
 
@@ -71,6 +90,9 @@ test.describe("phone width (390px)", () => {
       const box = await link.boundingBox();
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
+    // The top bar's way into the Final Exam (the tab bar keeps its five items).
+    const toFinal = await page.locator(".topbar").getByRole("link", { name: "Final Exam" }).boundingBox();
+    expect(toFinal!.height).toBeGreaterThanOrEqual(44);
     await page.goto("/practice/4.10-466");
     for (const name of [/Get a Hint/, /Reveal Answer/, /Worked Solution/, /^Got it/, /^Shaky/, /^Lost/]) {
       const box = await page.getByRole("button", { name }).boundingBox();

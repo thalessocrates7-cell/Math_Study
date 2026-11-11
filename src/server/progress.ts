@@ -1,10 +1,12 @@
-import { and, asc, count, desc, eq, isNotNull, lte } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, lte } from "drizzle-orm";
 import type { Difficulty } from "../../content/types";
 import type { Q } from "../db/client";
 import { assignments, attempts, problems, reviewItems, sections, type ReviewReason } from "../db/schema";
-import { addDays, daysBetween } from "../lib/dates";
+import { addDays } from "../lib/dates";
 import { CONFIDENCE_SCORE, isSectionMastered, summarize, type ProblemStatus, type ProblemSummary } from "../lib/mastery";
+import { LEVEL_ORDER, practiceLink, type Prep } from "../lib/prep";
 import { ensureAssignments } from "./plan";
+import { prepProblemIds } from "./prep";
 
 export type SectionInfo = { id: string; title: string; objectives: string[]; sort: number };
 
@@ -51,29 +53,57 @@ export type StudentState = {
   pending: PendingItem[];
 };
 
-/** Everything the student pages need, in four queries. */
-export async function loadStudentState(q: Q, studentId: string): Promise<StudentState> {
-  await ensureAssignments(q, studentId);
+/** The Final Exam has no fixed plan: each chapter's list is all of its active questions, by level then number. */
+async function finalLists(q: Q): Promise<AssignedProblem[]> {
+  const rows = await q
+    .select({
+      problemId: problems.id,
+      sectionId: problems.sectionId,
+      difficulty: problems.difficulty,
+      openstaxNumber: problems.openstaxNumber,
+      statement: problems.statement,
+      sort: problems.sort,
+      sectionSort: sections.sort,
+    })
+    .from(problems)
+    .innerJoin(sections, eq(sections.id, problems.sectionId))
+    .where(and(eq(sections.preparation, "final"), eq(problems.active, true)));
+  rows.sort((a, b) => a.sectionSort - b.sectionSort || LEVEL_ORDER[a.difficulty] - LEVEL_ORDER[b.difficulty] || a.sort - b.sort);
+  const seen = new Map<string, number>();
+  return rows.map((r) => {
+    const position = (seen.get(r.sectionId) ?? 0) + 1;
+    seen.set(r.sectionId, position);
+    return { problemId: r.problemId, sectionId: r.sectionId, position, difficulty: r.difficulty, openstaxNumber: r.openstaxNumber, statement: r.statement };
+  });
+}
+
+/** Everything the student pages need, in four queries, for one preparation. */
+export async function loadStudentState(q: Q, studentId: string, prep: Prep = "exam4"): Promise<StudentState> {
+  // The old fixed plans exist only for the Integration Review sections.
+  if (prep === "exam4") await ensureAssignments(q, studentId);
+  const mine = prepProblemIds(q, prep);
   const [secs, assigned, rated, pending] = await Promise.all([
     q
       .select({ id: sections.id, title: sections.title, objectives: sections.objectives, sort: sections.sort })
       .from(sections)
       // The supplementary sections (4.1, 4.2) aren't on Exam 4, so they stay out of these lists.
-      .where(eq(sections.kind, "core"))
+      .where(and(eq(sections.kind, "core"), eq(sections.preparation, prep)))
       .orderBy(asc(sections.sort)),
-    q
-      .select({
-        problemId: assignments.problemId,
-        sectionId: assignments.sectionId,
-        position: assignments.position,
-        difficulty: problems.difficulty,
-        openstaxNumber: problems.openstaxNumber,
-        statement: problems.statement,
-      })
-      .from(assignments)
-      .innerJoin(problems, eq(problems.id, assignments.problemId))
-      .where(and(eq(assignments.studentId, studentId), eq(problems.active, true)))
-      .orderBy(asc(assignments.position)),
+    prep === "final"
+      ? finalLists(q)
+      : q
+          .select({
+            problemId: assignments.problemId,
+            sectionId: assignments.sectionId,
+            position: assignments.position,
+            difficulty: problems.difficulty,
+            openstaxNumber: problems.openstaxNumber,
+            statement: problems.statement,
+          })
+          .from(assignments)
+          .innerJoin(problems, eq(problems.id, assignments.problemId))
+          .where(and(eq(assignments.studentId, studentId), eq(problems.active, true)))
+          .orderBy(asc(assignments.position)),
     q
       .select({
         attemptId: attempts.id,
@@ -90,7 +120,7 @@ export async function loadStudentState(q: Q, studentId: string): Promise<Student
       })
       .from(attempts)
       .innerJoin(problems, eq(problems.id, attempts.problemId))
-      .where(and(eq(attempts.studentId, studentId), isNotNull(attempts.ratedAt)))
+      .where(and(eq(attempts.studentId, studentId), isNotNull(attempts.ratedAt), inArray(attempts.problemId, mine)))
       .orderBy(desc(attempts.ratedAt)),
     q
       .select({
@@ -106,7 +136,7 @@ export async function loadStudentState(q: Q, studentId: string): Promise<Student
       })
       .from(reviewItems)
       .innerJoin(problems, eq(problems.id, reviewItems.problemId))
-      .where(and(eq(reviewItems.studentId, studentId), eq(reviewItems.status, "pending")))
+      .where(and(eq(reviewItems.studentId, studentId), eq(reviewItems.status, "pending"), inArray(reviewItems.problemId, mine)))
       .orderBy(asc(reviewItems.dueDate), asc(reviewItems.createdAt)),
   ]);
   const ratedRows = rated.map((r) => ({ ...r, rating: r.rating!, ratedDay: r.ratedDay!, ratedAt: r.ratedAt! }));
@@ -170,7 +200,7 @@ export type Recommendation =
   | { kind: "review"; href: string; problemId: string; sectionId: string; sectionTitle: string; difficulty: Difficulty; dueCount: number }
   | { kind: "done" };
 
-export function recommend(state: StudentState, today: string): Recommendation {
+export function recommend(state: StudentState, today: string, prep: Prep = "exam4"): Recommendation {
   const progress = sectionProgress(state);
   const title = (id: string) => state.sections.find((s) => s.id === id)?.title ?? id;
   const easier = state.pending.find((i) => i.reason === "easier" && i.dueDate <= today);
@@ -178,7 +208,7 @@ export function recommend(state: StudentState, today: string): Recommendation {
     const p = progress.find((x) => x.section.id === easier.sectionId);
     return {
       kind: "easier",
-      href: `/practice/${encodeURIComponent(easier.problemId)}?item=${easier.id}`,
+      href: practiceLink(prep, easier.problemId, { item: easier.id }),
       problemId: easier.problemId,
       sectionId: easier.sectionId,
       sectionTitle: title(easier.sectionId),
@@ -193,7 +223,7 @@ export function recommend(state: StudentState, today: string): Recommendation {
     const position = state.assigned.filter((x) => x.sectionId === p.section.id).findIndex((x) => x.problemId === a.problemId) + 1;
     return {
       kind: "plan",
-      href: `/practice/${encodeURIComponent(a.problemId)}`,
+      href: practiceLink(prep, a.problemId),
       problemId: a.problemId,
       sectionId: p.section.id,
       sectionTitle: p.section.title,
@@ -207,7 +237,7 @@ export function recommend(state: StudentState, today: string): Recommendation {
   if (due.length > 0) {
     return {
       kind: "review",
-      href: `/practice/${encodeURIComponent(due[0].problemId)}?item=${due[0].id}`,
+      href: practiceLink(prep, due[0].problemId, { item: due[0].id }),
       problemId: due[0].problemId,
       sectionId: due[0].sectionId,
       sectionTitle: title(due[0].sectionId),
@@ -332,15 +362,18 @@ export function sectionDetail(state: StudentState, sectionId: string): SectionDe
   };
 }
 
-export function examCountdown(examDate: string, today: string): number {
-  return daysBetween(today, examDate);
-}
-
-/** Review problems due today or earlier (the sidebar badge). */
-export async function dueReviewCount(q: Q, studentId: string, today: string): Promise<number> {
+/** One preparation's review problems due today or earlier (the sidebar badge). */
+export async function dueReviewCount(q: Q, studentId: string, today: string, prep: Prep = "exam4"): Promise<number> {
   const [row] = await q
     .select({ n: count() })
     .from(reviewItems)
-    .where(and(eq(reviewItems.studentId, studentId), eq(reviewItems.status, "pending"), lte(reviewItems.dueDate, today)));
+    .where(
+      and(
+        eq(reviewItems.studentId, studentId),
+        eq(reviewItems.status, "pending"),
+        lte(reviewItems.dueDate, today),
+        inArray(reviewItems.problemId, prepProblemIds(q, prep)),
+      ),
+    );
   return row?.n ?? 0;
 }

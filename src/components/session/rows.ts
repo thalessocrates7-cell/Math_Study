@@ -49,7 +49,7 @@ export function savedRows(loaded: Loaded, items: SessionItem[], nextId: string |
       minutes: it.minutes,
       difficulty: loaded.problemById.get(it.problemId)?.difficulty ?? "C",
       where: whereText(loaded, it.problemId),
-      href: open ? practiceHref(it) : null,
+      href: open ? practiceHref(it, loaded.prep) : null,
       skipId: open && it.track === "lookback" ? it.id : null,
     };
   });

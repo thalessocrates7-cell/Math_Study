@@ -17,6 +17,7 @@ import {
   weeklyMinutes,
 } from "@/lib/availability";
 import { formatFullDate, isISODate } from "@/lib/dates";
+import type { Prep } from "@/lib/prep";
 
 export type ScheduleFormProps = {
   initial: Availability;
@@ -24,6 +25,8 @@ export type ScheduleFormProps = {
   examDate: string;
   classExamDate: string;
   today: string;
+  /** Which schedule this is: Integration Review's, or the Final Exam's own. */
+  prep?: Prep;
 };
 
 const SESSION_OPTIONS = Array.from({ length: MAX_SESSIONS }, (_, i) => i + 1);
@@ -71,6 +74,7 @@ export function ScheduleForm(props: ScheduleFormProps) {
 
   return (
     <form action={action} className="stack-lg" noValidate>
+      <input type="hidden" name="prep" value={props.prep ?? "exam4"} />
       <input type="hidden" name="availability" value={JSON.stringify(availability)} />
       {state.error && !state.field ? (
         <div className="alert alert-error" role="alert">

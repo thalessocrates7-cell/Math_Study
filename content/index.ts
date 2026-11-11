@@ -10,6 +10,7 @@ import { SECTIONS } from "./sections";
 import type { ProblemSeed } from "./types";
 
 export { CORE_SECTIONS, SECTIONS } from "./sections";
+export { FINAL_EXAM, FINAL_POOL, FINAL_SECTIONS } from "./final-exam";
 export * from "./types";
 
 export const ALL_PROBLEMS: ProblemSeed[] = [...p410, ...p51, ...p52, ...p53, ...p54, ...p55, ...p56, ...p57];

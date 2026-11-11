@@ -19,6 +19,8 @@ export type StudyCardInput = {
   doneToday: boolean;
   /** The first review problem due today, if any. */
   due: { problemId: string; href: string; count: number } | null;
+  /** Today's session page (the Final Exam has its own); defaults to /session. */
+  sessionHref?: string;
 };
 
 export type StudyCard =
@@ -35,7 +37,7 @@ export function chooseStudyCard(input: StudyCardInput): StudyCard {
     return {
       kind: "continue",
       problemId: next?.problemId ?? null,
-      href: next?.href ?? "/session",
+      href: next?.href ?? input.sessionHref ?? "/session",
       index: next?.essential ? open.index : null,
       total: open.total,
       easier: next?.track === "reinforcement",

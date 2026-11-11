@@ -3,7 +3,6 @@
  * Pages and actions call loadStudentModel(); the planning itself is pure (src/lib/engine.ts).
  */
 import { and, asc, eq, gte, inArray } from "drizzle-orm";
-import { DEFAULT_EXAM } from "../../content/index";
 import type { Difficulty } from "../../content/types";
 import type { Q } from "../db/client";
 import {
@@ -24,9 +23,12 @@ import { addDays, todayISO } from "../lib/dates";
 import { computeModel, type StudentModel } from "../lib/engine";
 import type { TimeStats } from "../lib/estimates";
 import type { EngineAttempt, EngineProblem, EngineReview, EngineUnit } from "../lib/learning-state";
+import { type Prep, type Routes, routesFor } from "../lib/prep";
 import type { ReasonLookup } from "../lib/reasons";
 import { type Rules, resolveRules } from "../lib/rules";
 import { loadChecks } from "./checklist";
+import { prepProblemIds } from "./prep";
+import { examFor, studentFor } from "./settings";
 
 export type ProblemLite = {
   id: string;
@@ -48,10 +50,16 @@ export type Loaded = {
   now: Date;
   today: string;
   student: Student;
+  /** Integration Review (exam4) or the Final Exam: everything below is that preparation's only. */
+  prep: Prep;
+  /** That preparation's pages (e.g. /final-exam/session). */
+  routes: Routes;
   examName: string;
   classExamDate: string;
   /** The student's own date if they set one, else the class date. */
   examDate: string;
+  /** The exam's start time as 24-hour New York time ("14:00"), when known (the Final Exam). */
+  examTime: string | null;
   rules: Rules;
   availability: Availability;
   /** False until the student saves a schedule (the default one is used meanwhile). */
@@ -67,12 +75,14 @@ export type Loaded = {
   lookup: ReasonLookup;
 };
 
-export async function loadStudentModel(q: Q, student: Student, now = new Date()): Promise<Loaded> {
+export async function loadStudentModel(q: Q, student: Student, now = new Date(), prep: Prep = "exam4"): Promise<Loaded> {
   const today = todayISO(now);
   const recentSince = new Date(now.getTime() - 4 * 86_400_000);
+  // Only this preparation's problems, and so only its attempts, reviews, ticks and sessions.
+  const mine = prepProblemIds(q, prep);
   const [settingsRows, secs, probs, stats, atts, pending, sessions, recent, ticked] = await Promise.all([
     q.select().from(settings).where(eq(settings.id, 1)),
-    q.select().from(sections).orderBy(asc(sections.sort)),
+    q.select().from(sections).where(eq(sections.preparation, prep)).orderBy(asc(sections.sort)),
     q
       .select({
         id: problems.id,
@@ -86,28 +96,49 @@ export async function loadStudentModel(q: Q, student: Student, now = new Date())
         statement: problems.statement,
       })
       .from(problems)
+      .where(inArray(problems.id, mine))
       .orderBy(asc(problems.sort)),
     q.select().from(problemTimeStats),
-    q.select().from(attempts).where(eq(attempts.studentId, student.id)),
-    q.select().from(reviewItems).where(and(eq(reviewItems.studentId, student.id), eq(reviewItems.status, "pending"))),
+    q
+      .select()
+      .from(attempts)
+      .where(and(eq(attempts.studentId, student.id), inArray(attempts.problemId, mine))),
+    q
+      .select()
+      .from(reviewItems)
+      .where(and(eq(reviewItems.studentId, student.id), eq(reviewItems.status, "pending"), inArray(reviewItems.problemId, mine))),
     q
       .select()
       .from(studySessions)
-      .where(and(eq(studySessions.studentId, student.id), eq(studySessions.day, today)))
+      .where(and(eq(studySessions.studentId, student.id), eq(studySessions.preparation, prep), eq(studySessions.day, today)))
       .orderBy(asc(studySessions.slot)),
     q
       .select()
       .from(sessionItems)
-      .where(and(eq(sessionItems.studentId, student.id), gte(sessionItems.createdAt, recentSince)))
+      .where(
+        and(
+          eq(sessionItems.studentId, student.id),
+          gte(sessionItems.createdAt, recentSince),
+          inArray(
+            sessionItems.sessionId,
+            q
+              .select({ id: studySessions.id })
+              .from(studySessions)
+              .where(and(eq(studySessions.studentId, student.id), eq(studySessions.preparation, prep))),
+          ),
+        ),
+      )
       .orderBy(asc(sessionItems.position)),
-    loadChecks(q, student.id),
+    loadChecks(q, student.id, prep),
   ]);
 
   const row = settingsRows[0];
   const rules = resolveRules(row?.rules);
-  const classExamDate = row?.examDate ?? DEFAULT_EXAM.date;
-  const examDate = student.examDateOverride ?? classExamDate;
-  const parsed = parseAvailability(student.availability);
+  const exam = examFor(prep, row);
+  const own = studentFor(prep, student);
+  const classExamDate = exam.classDate;
+  const examDate = own.examDateOverride ?? classExamDate;
+  const parsed = parseAvailability(own.availability);
   const availability = parsed ?? DEFAULT_AVAILABILITY;
 
   const units: EngineUnit[] = secs.map((s) => ({ id: s.id, title: s.title, sort: s.sort, kind: s.kind, skills: s.concepts }));
@@ -170,7 +201,8 @@ export async function loadStudentModel(q: Q, student: Student, now = new Date())
     timeStats,
     rules,
     seed: student.id,
-    includeSupplementary: student.supplementaryOptIn,
+    // The supplementary sections (4.1, 4.2) are Integration Review's; the Final Exam has none.
+    includeSupplementary: prep === "exam4" && student.supplementaryOptIn,
     ticked,
     minutesUsedToday,
     challengeDoneToday: sessions.length > 0,
@@ -190,9 +222,12 @@ export async function loadStudentModel(q: Q, student: Student, now = new Date())
     now,
     today,
     student,
-    examName: row?.examName ?? DEFAULT_EXAM.name,
+    prep,
+    routes: routesFor(prep),
+    examName: exam.name,
     classExamDate,
     examDate,
+    examTime: exam.time,
     rules,
     availability,
     hasSchedule: parsed !== null,

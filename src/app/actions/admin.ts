@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { SECTIONS } from "@content/index";
+import { FINAL_SECTIONS, SECTIONS } from "@content/index";
 import type { Difficulty, Step } from "@content/types";
 import { getDb } from "@/db/client";
 import { students } from "@/db/schema";
@@ -18,7 +18,8 @@ import {
   type ProblemInput,
 } from "@/server/admin";
 import { getProblem } from "@/server/practice";
-import { saveSettings } from "@/server/settings";
+import { isExamTime } from "@/lib/prep";
+import { saveFinalSettings, saveSettings } from "@/server/settings";
 import { deleteStudent, getStudent, mergeStudents, renameStudent } from "@/server/students";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -105,7 +106,7 @@ export async function saveProblemAction(_prev: ProblemState, formData: FormData)
   if (input.openstaxNumber !== null && (!Number.isInteger(input.openstaxNumber) || input.openstaxNumber < 1)) {
     return { error: "The OpenStax exercise number must be a positive whole number (or empty)." };
   }
-  const problem = validateProblemInput(input, SECTIONS.map((s) => s.id));
+  const problem = validateProblemInput(input, [...SECTIONS, ...FINAL_SECTIONS].map((s) => s.id));
   if (problem) return { error: problem };
   const db = await getDb();
   const existing = await getProblem(db, input.id);
@@ -155,6 +156,21 @@ export async function saveSettingsAction(_prev: SettingsState, formData: FormDat
   if (!isISODate(examDate)) return { error: "Enter a valid exam date." };
   const db = await getDb();
   await saveSettings(db, { examName, examDate });
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** The Final Exam's class settings: its name, date and start time (New York time). */
+export async function saveFinalSettingsAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
+  await requireAdmin();
+  const name = String(formData.get("finalName") ?? "").trim();
+  const date = String(formData.get("finalDate") ?? "");
+  const time = String(formData.get("finalTime") ?? "");
+  if (name.length < 2 || name.length > 60) return { error: "Exam name must be 2 to 60 characters." };
+  if (!isISODate(date)) return { error: "Enter a valid exam date." };
+  if (!isExamTime(time)) return { error: "Enter the start time, like 2:00 PM." };
+  const db = await getDb();
+  await saveFinalSettings(db, { name, date, time });
   revalidatePath("/", "layout");
   return { ok: true };
 }

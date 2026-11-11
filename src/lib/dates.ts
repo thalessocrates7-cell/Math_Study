@@ -65,6 +65,14 @@ export function formatShortWeekday(iso: string): string {
   return fmt({ weekday: "short", month: "short", day: "numeric" }).format(toUTC(iso));
 }
 
+/** The New York clock time as "HH:MM" (24-hour), e.g. "14:05". */
+export function clockHHMM(now: Date = new Date()): string {
+  const f = new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const map: Record<string, string> = {};
+  for (const p of f.formatToParts(now)) map[p.type] = p.value;
+  return `${map.hour}:${map.minute}`;
+}
+
 export function greeting(now: Date = new Date()): string {
   const { h } = parts(now);
   if (h < 12) return "Good morning";

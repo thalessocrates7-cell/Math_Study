@@ -1,10 +1,15 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Q } from "../db/client";
 import { problemChecks, problems } from "../db/schema";
+import type { Prep } from "../lib/prep";
+import { prepProblemIds } from "./prep";
 
-/** The problems this student has ticked on the Study Plan. */
-export async function loadChecks(q: Q, studentId: string): Promise<Set<string>> {
-  const rows = await q.select({ problemId: problemChecks.problemId }).from(problemChecks).where(eq(problemChecks.studentId, studentId));
+/** The problems this student has ticked on the Study Plan (only one preparation's, when given). */
+export async function loadChecks(q: Q, studentId: string, prep?: Prep): Promise<Set<string>> {
+  const where = prep
+    ? and(eq(problemChecks.studentId, studentId), inArray(problemChecks.problemId, prepProblemIds(q, prep)))
+    : eq(problemChecks.studentId, studentId);
+  const rows = await q.select({ problemId: problemChecks.problemId }).from(problemChecks).where(where);
   return new Set(rows.map((r) => r.problemId));
 }
 

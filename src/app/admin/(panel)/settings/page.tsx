@@ -1,7 +1,7 @@
 import { Download, Trash } from "lucide-react";
 import type { Metadata } from "next";
 import { purgeStudentsAction } from "@/app/actions/admin";
-import { SettingsForm } from "@/components/admin/SettingsForm";
+import { FinalExamSettingsForm, SettingsForm } from "@/components/admin/SettingsForm";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { getDb } from "@/db/client";
 import { requireAdmin } from "@/lib/auth";
@@ -42,6 +42,15 @@ export default async function AdminSettingsPage({ searchParams }: Props) {
               Exam
             </h2>
             <SettingsForm examName={settings.examName} examDate={settings.examDate} />
+          </section>
+          <section className="card" aria-labelledby="final-title">
+            <h2 id="final-title" className="card-title">
+              Final Exam
+            </h2>
+            <p className="small text-2" style={{ marginBottom: 12 }}>
+              The Final Exam pages (/final-exam) count down to this date and time. Students can still set their own date for a make-up.
+            </p>
+            <FinalExamSettingsForm name={settings.final.name} date={settings.final.date} time={settings.final.time} />
           </section>
           <section className="card" aria-labelledby="export-title">
             <h2 id="export-title" className="card-title">

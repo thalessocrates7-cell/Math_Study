@@ -49,9 +49,15 @@ test("study plan builder rejects counts larger than the pool", async ({ page }) 
 test("exam settings reach the student dashboard", async ({ page }) => {
   await adminSignIn(page, E2E_ADMIN_CODE);
   await page.goto("/admin/settings");
-  await page.getByLabel("Exam name").fill("Exam 4 (rescheduled)");
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText(/Saved\. Students see/)).toBeVisible();
+  // Two forms on the page: Exam 4's, and the Final Exam's own name, date and start time.
+  const exam = page.getByRole("region", { name: "Exam", exact: true });
+  const final = page.getByRole("region", { name: "Final Exam", exact: true });
+  await exam.getByLabel("Exam name").fill("Exam 4 (rescheduled)");
+  await exam.getByRole("button", { name: "Save" }).click();
+  await expect(exam.getByText(/Saved\. Students see/)).toBeVisible();
+  await final.getByLabel("Start time").fill("15:30");
+  await final.getByRole("button", { name: "Save" }).click();
+  await expect(final.getByText(/Saved\. The Final Exam countdown/)).toBeVisible();
 
   // Student and admin sessions use separate cookies, so the same browser can sign in as a student.
   await page.goto("/signin");
@@ -59,9 +65,16 @@ test("exam settings reach the student dashboard", async ({ page }) => {
   await page.getByLabel("Last Name").fill("Lovelace");
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByText("Exam 4 (rescheduled)").first()).toBeVisible();
+  // The Final Exam shows its own time, and nothing of Exam 4.
+  await page.goto("/final-exam");
+  await expect(page.getByRole("region", { name: "Final Exam", exact: true })).toContainText("3:30 PM");
+  await expect(page.getByText("Exam 4 (rescheduled)")).toHaveCount(0);
 
   await page.goto("/admin/settings");
-  await page.getByLabel("Exam name").fill("Exam 4");
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText(/Saved\. Students see/)).toBeVisible();
+  await exam.getByLabel("Exam name").fill("Exam 4");
+  await exam.getByRole("button", { name: "Save" }).click();
+  await expect(exam.getByText(/Saved\. Students see/)).toBeVisible();
+  await final.getByLabel("Start time").fill("14:00");
+  await final.getByRole("button", { name: "Save" }).click();
+  await expect(final.getByText(/Saved\. The Final Exam countdown/)).toBeVisible();
 });

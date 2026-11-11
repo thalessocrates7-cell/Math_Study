@@ -22,6 +22,8 @@ type Props = {
  * session (or continues the open one), so the card names that session's next problem.
  */
 export function StudyCard({ loaded, progress, firstTime, due }: Props) {
+  const { routes, prep } = loaded;
+  const unit = prep === "final" ? "Chapter" : "Section";
   const open = openSessionOf(loaded.todaySessions);
   const plan = previewNextSession(loaded);
   let openInput: StudyCardInput["open"] = null;
@@ -30,7 +32,7 @@ export function StudyCard({ loaded, progress, firstTime, due }: Props) {
     const planned = open.items.filter((i) => i.essential && i.status !== "dropped");
     const at = next ? planned.findIndex((i) => i.id === next.id) : -1;
     openInput = {
-      next: next ? { problemId: next.problemId, href: practiceHref(next), track: next.track, essential: next.essential } : null,
+      next: next ? { problemId: next.problemId, href: practiceHref(next, prep), track: next.track, essential: next.essential } : null,
       index: at >= 0 ? at + 1 : null,
       total: planned.length,
     };
@@ -40,6 +42,7 @@ export function StudyCard({ loaded, progress, firstTime, due }: Props) {
     plan: { problemIds: plan.items.map((i) => i.problemId), minutes: plan.minutes, scheduled: plan.scheduledMinutes !== null },
     doneToday: !open && loaded.todaySessions.length > 0,
     due,
+    sessionHref: routes.session,
   });
 
   if (card.kind === "done-today" || card.kind === "caught-up") {
@@ -53,7 +56,7 @@ export function StudyCard({ loaded, progress, firstTime, due }: Props) {
             <>
               <h2 id="next-title">Today&apos;s session is done</h2>
               <p className="text-2">Want more? Extra practice is optional.</p>
-              <Link className="btn btn-secondary" href="/session">
+              <Link className="btn btn-secondary" href={routes.session}>
                 Keep going
               </Link>
             </>
@@ -61,7 +64,7 @@ export function StudyCard({ loaded, progress, firstTime, due }: Props) {
             <>
               <h2 id="next-title">All caught up!</h2>
               <p className="text-2">Your study plan is done and nothing is due right now. Check back tomorrow for review problems.</p>
-              <Link className="btn btn-secondary" href="/progress">
+              <Link className="btn btn-secondary" href={routes.progress}>
                 See your progress
               </Link>
             </>
@@ -125,16 +128,17 @@ export function StudyCard({ loaded, progress, firstTime, due }: Props) {
         {section && sp ? (
           <div className="stack-sm">
             <div className="spread small">
-              <span className="text-2">Section progress</span>
+              <span className="text-2">{unit} progress</span>
               <span className="num">
                 {sp.done} / {sp.total} ({sp.total ? Math.round((sp.done / sp.total) * 100) : 0}%)
               </span>
             </div>
-            <ProgressBar value={sp.done} max={sp.total} label={`Section ${section.id} progress`} />
+            <ProgressBar value={sp.done} max={sp.total} label={`${unit} ${section.id} progress`} />
           </div>
         ) : null}
         {card.kind === "start" ? (
           <form action={startSessionAction}>
+            <input type="hidden" name="prep" value={prep} />
             <input type="hidden" name="minutes" value={card.minutes} />
             <button className="btn btn-primary btn-block" type="submit">
               {label}

@@ -1,9 +1,65 @@
 # Adaptive study system: progress and what's left
 
-Last updated: **2026-11-09 (Mon)**. Exam 4 is **Wed 2026-12-02**.
+Last updated: **2026-11-10 (Tue)**. Exam 4 is **Wed 2026-12-02**; the Final Exam is **Mon 2026-12-14, 2:00 PM**.
 
 - **Approved plan:** `C:\Users\thale\.claude\plans\c-users-thale-donloads-mth-263-calculus-federated-moth.md`.
 - **Older handoff:** `PROJECT_CONTEXT.md`, which describes the site as it was before this work.
+
+## Final Exam environment (2026-11-10): branch `final-exam`, NOT committed, NOT live
+
+Brief: `Downloads\MTH263_Final_Exam_Route_and_Dashboard_Brief.docx`. Plan: `~/.claude/plans/c-users-thale-downloads-mth263-final-exa-shimmering-wolf.md`.
+Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it; all work is uncommitted in the working tree.
+
+**Your answers (2026-11-10):**
+- Final Exam is a replica of the current pages for the final.
+- Inside it, the item under Settings says **Integration Review** and goes back.
+- The Final Exam has its own study schedule.
+- The 77-question pool is an initial pool and may grow.
+- The exam is 2:00 PM Eastern, editable by the admin.
+- This step builds the pages and the separate data; the question import comes later.
+
+**What it does:**
+- `/final-exam` (+ `/plan`, `/review`, `/progress`, `/session`, `/settings`, `/schedule`, `/practice/[id]`) are the same pages as the regular site. They come from shared views in `src/components/views/*View.tsx`, and every route passes `prep="exam4"` or `prep="final"`.
+- Sidebar: **Final Exam** (graduation cap) sits directly under Settings. Inside the Final Exam, **Integration Review** takes that place, and the brand reads "MTH 263 Final Exam". On phones the top bar has the same switch, so the tab bar keeps its 5 items.
+- Way back: clicking Final Exam saves the exact page in a session cookie (`mth_return`, checked by `safeReturnPath` in `src/lib/prep.ts`). Integration Review and the Dashboard's "Back to Integration Review" return there, or to `/dashboard` when nothing is saved.
+- A practice problem opened under the other environment's address moves to its own address.
+
+**Data (migration `0003_final_exam.sql`, additive):**
+- New enum `preparation` (`exam4` | `final`) on `sections` and `study_sessions`. Every existing row becomes `exam4`.
+- The session slot index is now (student, preparation, day, slot), so both environments can have a "session 1" on the same day.
+- `students.final_availability` and `final_exam_date_override` hold the Final Exam's own schedule and date.
+- `settings.final_exam_name`, `final_exam_date` and `final_exam_time` are null until set, falling back to `content/final-exam.ts`: Final Exam, 2026-12-14, 14:00.
+- A problem belongs to its section's preparation, so attempts, reviews and ticks are separated through the problem (`src/server/prep.ts`). No column was added to those tables, because a second column could disagree with the section.
+- The Final Exam's chapters are seeded as sections `2` Limits, `4` Applications of Derivatives and `5` Integration (`content/final-exam.ts`). They have no problems yet. The candidate pool (77 numbers, without 542) is `FINAL_POOL` in the same file.
+
+**Final Exam Dashboard:**
+- Same layout as the regular Dashboard, with the exam card showing the date, "2:00 PM ET" and a live countdown.
+- Completed, Chapters mastered (every active question's latest rating is Got it) and To review count Final Exam records only. The due banner appears only for real due items.
+- With no questions, the study card says "Final Exam questions are on the way" and offers "Set your study times".
+- Recent Activity shows Final Exam ratings only.
+- Question Coverage takes the Study Plan Progress card's place. It shows attempted / not yet attempted (these add up to the pool) and, separately, awaiting review, checked again later and the latest self-reported ratings.
+
+**Admin:**
+- `/admin/settings` has a Final Exam card for name, date and start time.
+- The class overview and Plan Builder stay Integration Review only.
+- The problem editor accepts the chapters, and problem ids like `2-208` are accepted.
+
+**Checks:**
+- `tsc` passes, also with `--noUnusedLocals`.
+- `npx vitest run`: 119 tests in 14 files. The 17 new ones are in `tests/prep.test.ts`, `tests/coverage.test.ts` and `tests/final-exam.test.ts`, which checks data separation both ways, separate schedules, sessions on the same day and settings.
+- `next build` passes. Contrast and the content check pass.
+- Upgrade test: the live code (`mth263-fix` worktree) built a database with students, ratings, reviews, ticks, notes and an open session. The new code then migrated it. No rows were lost, every old row is `exam4`, and a Final Exam session can start the same day.
+- Browser check at 1440 px (dark) and 390 px (light), on a scratch database with 7 stand-in questions:
+  - The return to `/plan?section=5.3&level=challenge` worked, and direct entry fell back to `/dashboard`.
+  - A Final Exam session started, and rating kept it inside `/final-exam`.
+  - `/practice/2-213` moved to `/final-exam/practice/2-213`.
+  - The regular Dashboard and Review Queue stayed empty, and there was no horizontal scroll.
+- **Not run:** Playwright (`e2e/8-final-exam.spec.ts`, plus the Final Exam pages added to `e2e/3-a11y.spec.ts`). Claude Code stopped the run because the computer was low on memory. Run `npm run e2e` when memory allows.
+
+**Before it goes live (ask first):**
+- Back up first: a CSV export from `/admin` plus a Neon branch, because 0003 changes the live database.
+- `vercel.json` turns off preview builds for `final-exam`. A preview would run against the live database without the migration.
+- The open decisions are in `WEBSITE_IDEAS.md` (Final Exam 7–10).
 
 ## Status at a glance
 

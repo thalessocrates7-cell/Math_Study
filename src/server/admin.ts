@@ -147,7 +147,12 @@ export async function classOverview(q: Q, today: string, now = new Date()): Prom
   const rows = await studentRows(q, today);
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
   const [secs, latestBySection, recent] = await Promise.all([
-    q.select({ id: sections.id, title: sections.title }).from(sections).where(eq(sections.kind, "core")).orderBy(asc(sections.sort)),
+    // The class overview is Integration Review's (the Final Exam's chapters have their own preparation).
+    q
+      .select({ id: sections.id, title: sections.title })
+      .from(sections)
+      .where(and(eq(sections.kind, "core"), eq(sections.preparation, "exam4")))
+      .orderBy(asc(sections.sort)),
     // Latest rating per (student, problem), counted by section.
     q.execute(sql`
       select p.section_id as "sectionId", latest.rating as "rating", count(*)::int as "n"
@@ -400,10 +405,17 @@ async function refreshPlansWithout(db: DB, problemIds: string[]) {
 
 export type PlanRow = { sectionId: string; title: string; counts: PlanCounts; pool: Record<Difficulty, number> };
 
-/** The legacy fixed plan covers only the Exam 4 sections: the empty 4.1/4.2 shells could never pass validatePlan. */
+/**
+ * The legacy fixed plan covers only the Exam 4 sections: the empty 4.1/4.2 shells (and the Final
+ * Exam's chapters, which have no fixed plan) could never pass validatePlan.
+ */
 export async function planRows(q: Q): Promise<PlanRow[]> {
   const [secs, configs, pools] = await Promise.all([
-    q.select({ id: sections.id, title: sections.title }).from(sections).where(eq(sections.kind, "core")).orderBy(asc(sections.sort)),
+    q
+      .select({ id: sections.id, title: sections.title })
+      .from(sections)
+      .where(and(eq(sections.kind, "core"), eq(sections.preparation, "exam4")))
+      .orderBy(asc(sections.sort)),
     q.select().from(planConfig),
     getPools(q),
   ]);

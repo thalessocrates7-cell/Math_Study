@@ -2,6 +2,7 @@ import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { DB, Q } from "../db/client";
 import { assignments, attempts, notes, problemChecks, reviewItems, students, type Student } from "../db/schema";
 import { nameKey, normalizeName } from "../lib/names";
+import type { Prep } from "../lib/prep";
 import type { ScheduleValue } from "../lib/schedule";
 import { ensureAssignments } from "./plan";
 
@@ -38,8 +39,18 @@ export async function setStudentTheme(q: Q, id: string, theme: Theme): Promise<v
   await q.update(students).set({ theme }).where(eq(students.id, id));
 }
 
-/** Saves the study schedule. The first save also marks the student as set up (onboarded). */
-export async function saveSchedule(q: Q, id: string, value: ScheduleValue): Promise<void> {
+/**
+ * Saves one preparation's study schedule and own exam date. Integration Review's first save also
+ * marks the student as set up (onboarded); the Final Exam's schedule is separate and never touches it.
+ */
+export async function saveSchedule(q: Q, id: string, value: ScheduleValue, prep: Prep = "exam4"): Promise<void> {
+  if (prep === "final") {
+    await q
+      .update(students)
+      .set({ finalAvailability: value.availability, finalExamDateOverride: value.examDateOverride })
+      .where(eq(students.id, id));
+    return;
+  }
   await q
     .update(students)
     .set({
