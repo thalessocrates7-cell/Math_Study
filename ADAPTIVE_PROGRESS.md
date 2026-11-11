@@ -5,10 +5,10 @@ Last updated: **2026-11-10 (Tue)**. Exam 4 is **Wed 2026-12-02**; the Final Exam
 - **Approved plan:** `C:\Users\thale\.claude\plans\c-users-thale-donloads-mth-263-calculus-federated-moth.md`.
 - **Older handoff:** `PROJECT_CONTEXT.md`, which describes the site as it was before this work.
 
-## Final Exam environment (2026-11-10): branch `final-exam`, NOT committed, NOT live
+## Final Exam environment (2026-11-10): branch `final-exam` (commit `ca9426b`, not pushed), NOT live
 
 Brief: `Downloads\MTH263_Final_Exam_Route_and_Dashboard_Brief.docx`. Plan: `~/.claude/plans/c-users-thale-downloads-mth263-final-exa-shimmering-wolf.md`.
-Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it; all work is uncommitted in the working tree.
+Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. The work is committed there (`ca9426b`), after every check below passed.
 
 **Your answers (2026-11-10):**
 - Final Exam is a replica of the current pages for the final.
@@ -54,12 +54,15 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it; 
   - A Final Exam session started, and rating kept it inside `/final-exam`.
   - `/practice/2-213` moved to `/final-exam/practice/2-213`.
   - The regular Dashboard and Review Queue stayed empty, and there was no horizontal scroll.
-- **Not run:** Playwright (`e2e/8-final-exam.spec.ts`, plus the Final Exam pages added to `e2e/3-a11y.spec.ts`). Claude Code stopped the run because the computer was low on memory. Run `npm run e2e` when memory allows.
+- Playwright: 33 tests in 8 files pass.
+  - Includes the new `e2e/8-final-exam.spec.ts`, the Final Exam pages in the axe checks (both themes) and the 390 px checks, and the Final Exam start time in `e2e/2-admin.spec.ts`.
+  - The suite ran in four groups because the computer was low on memory: 5–8, then 1–2, then 3, then 4 last.
 
 **Before it goes live (ask first):**
 - Back up first: a CSV export from `/admin` plus a Neon branch, because 0003 changes the live database.
 - `vercel.json` turns off preview builds for `final-exam`. A preview would run against the live database without the migration.
 - The open decisions are in `WEBSITE_IDEAS.md` (Final Exam 7–10).
+- Next (your answer, 2026-11-10): import the 77 questions **with** hints, answers and worked solutions, like the Exam 4 problems. Show the four original OpenStax figures (212, 529, 530, 551) and the RAM table (459–461).
 
 ## Status at a glance
 
