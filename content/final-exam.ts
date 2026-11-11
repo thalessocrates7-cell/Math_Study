@@ -49,8 +49,27 @@ export const FINAL_SECTIONS: SectionSeed[] = [
     kind: "core",
     sort: 2,
     url: BOOK + "3-review-exercises",
-    objectives: ["Sketch the graph of a function's derivative from the graph of the function."],
-    concepts: [{ id: "derivative-graphs", label: "Graphing the derivative from a graph" }],
+    objectives: [
+      "Explain how differentiability and continuity are related.",
+      "Find derivatives from the limit definition and with the power, product, quotient and chain rules.",
+      "Differentiate exponential, logarithmic, trigonometric and inverse trigonometric functions, implicitly and to higher orders.",
+      "Write the equation of a tangent line.",
+      "Sketch the graph of a function's derivative from the graph of the function.",
+      "Interpret the derivative as a rate of change, from a formula and from data.",
+    ],
+    concepts: [
+      { id: "differentiability", label: "Differentiability and continuity (true or false)" },
+      { id: "limit-definition", label: "The limit definition of the derivative" },
+      { id: "derivative-rules", label: "Power, product and quotient rules" },
+      { id: "chain-rule", label: "The chain rule" },
+      { id: "exp-log-derivatives", label: "Derivatives of exponential and logarithmic functions" },
+      { id: "trig-derivatives", label: "Derivatives of trigonometric and inverse trigonometric functions" },
+      { id: "implicit-differentiation", label: "Implicit differentiation" },
+      { id: "higher-derivatives", label: "Higher-order derivatives" },
+      { id: "tangent-lines", label: "Tangent lines" },
+      { id: "derivative-graphs", label: "Graphing the derivative from a graph" },
+      { id: "rates-of-change", label: "Rates of change and what they mean" },
+    ],
   },
   {
     id: "4",
@@ -105,14 +124,15 @@ const range = (from: number, to: number) => Array.from({ length: to - from + 1 }
 
 /**
  * The Final Exam's candidate question pool: the OpenStax chapter review exercises named in the
- * import specification (77 questions), plus Chapter 3 Exercises 386 and 387, added at the owner's
- * request. It is the pool as currently known, not a promise that the exam covers nothing else, so
- * the site calls it the "initial pool". Edit the numbers here to grow it.
+ * import specification (77 questions: Chapters 2, 4 and 5), plus all 25 of Chapter 3's Review
+ * Exercises, 367–391, added at the owner's request. That is 102 questions. It is the pool as
+ * currently known, not a promise that the exam covers nothing else, so the site calls it the
+ * "initial pool" (the owner confirmed on 2026-11-11 that it may still grow). Edit the numbers here to grow it.
  * Chapter 4 Exercise 542 is left out on purpose (the L'Hôpital's Rule item).
  */
 export const FINAL_POOL: ReadonlyArray<{ sectionId: string; chapter: number; title: string; numbers: readonly number[]; excluded: readonly number[] }> = [
   { sectionId: "2", chapter: 2, title: "Limits", numbers: range(208, 232), excluded: [] },
-  { sectionId: "3", chapter: 3, title: "Derivatives", numbers: [386, 387], excluded: [] },
+  { sectionId: "3", chapter: 3, title: "Derivatives", numbers: range(367, 391), excluded: [] },
   { sectionId: "4", chapter: 4, title: "Applications of Derivatives", numbers: [...range(525, 541), ...range(543, 552)], excluded: [542] },
   { sectionId: "5", chapter: 5, title: "Integration", numbers: range(439, 463), excluded: [] },
 ];

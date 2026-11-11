@@ -88,8 +88,8 @@ describe("Final Exam questions", () => {
     const ids = FINAL_PROBLEMS.map((p) => p.id).sort();
     const expected = FINAL_POOL.flatMap((c) => c.numbers.map((n) => `${c.sectionId}-${n}`)).sort();
     expect(ids).toEqual(expected);
-    // The spec's 77, plus Chapter 3's 386 and 387 (added at the owner's request).
-    expect(ids).toHaveLength(79);
+    // The spec's 77, plus all 25 of Chapter 3's review exercises, 367–391 (added at the owner's request).
+    expect(ids).toHaveLength(102);
     expect(ids).not.toContain("4-542");
     for (const p of FINAL_PROBLEMS) expect(p.openstax, p.id).toBe(Number(p.id.split("-")[1]));
   });
@@ -112,8 +112,6 @@ describe("Final Exam questions", () => {
   it("gives every full chapter Foundation, Core and Challenge questions (the planner uses all three)", () => {
     for (const s of FINAL_SECTIONS) {
       const list = FINAL_PROBLEMS.filter((p) => p.section === s.id);
-      // Chapter 3 holds only the two graph questions 386 and 387.
-      if (list.length < 10) continue;
       for (const d of ["F", "C", "Ch"] as const) expect(list.filter((p) => p.difficulty === d).length, `${s.id} ${d}`).toBeGreaterThan(1);
     }
   });
@@ -139,5 +137,29 @@ describe("Final Exam questions", () => {
     }
     expect(FINAL_PROBLEMS.find((p) => p.id === "2-232")!.statement).toContain("x(t)=t^2-2t+4");
     expect(FINAL_PROBLEMS.find((p) => p.id === "5-463")!.statement).toContain("v(t)=6400t^2-6505t+2686");
+  });
+
+  it("keeps the Katrina table with 390–391, and the Ocean City model with 388–389", () => {
+    const rows = ["| Hour | Wind speed (mph) |", "| 1 | 45 |", "| 5 | 75 |", "| 11 | 100 |", "| 29 | 115 |", "| 49 | 145 |", "| 58 | 175 |", "| 73 | 155 |", "| 81 | 125 |", "| 85 | 95 |", "| 107 | 35 |"];
+    for (const id of ["3-390", "3-391"]) {
+      const q = FINAL_PROBLEMS.find((p) => p.id === id)!.statement;
+      for (const row of rows) expect(q, id).toContain(row);
+    }
+    for (const id of ["3-388", "3-389"]) {
+      const q = FINAL_PROBLEMS.find((p) => p.id === id)!.statement;
+      expect(q, id).toContain(String.raw`w(t)=1.9+2.9\cos\left(\frac{\pi}{6}t\right)`);
+      expect(q, id).toContain("Ocean City");
+    }
+  });
+
+  it("tags Chapter 3's groups of exercises (true or false, limit definition, higher orders, tangents, graphs, rates)", () => {
+    const tags = (n: number) => FINAL_PROBLEMS.find((p) => p.id === `3-${n}`)!.concepts;
+    for (const n of [367, 368, 369, 370]) expect(tags(n), String(n)).toContain("differentiability");
+    for (const n of [371, 372]) expect(tags(n), String(n)).toContain("limit-definition");
+    expect(tags(380)).toContain("implicit-differentiation");
+    for (const n of [382, 383]) expect(tags(n), String(n)).toContain("higher-derivatives");
+    for (const n of [384, 385]) expect(tags(n), String(n)).toContain("tangent-lines");
+    for (const n of [386, 387]) expect(tags(n), String(n)).toContain("derivative-graphs");
+    for (const n of [388, 389, 390, 391]) expect(tags(n), String(n)).toContain("rates-of-change");
   });
 });

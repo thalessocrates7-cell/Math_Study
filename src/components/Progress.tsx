@@ -1,5 +1,16 @@
-export function ProgressBar({ value, max, label }: { value: number; max: number; label: string }) {
+/**
+ * A progress bar. `decorative` hides it from assistive technology: use it when the same numbers
+ * are written next to it as text, e.g. inside a link, so the bar's own label doesn't end up in the link's name.
+ */
+export function ProgressBar({ value, max, label, decorative = false }: { value: number; max: number; label: string; decorative?: boolean }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  if (decorative) {
+    return (
+      <div className="progress" aria-hidden="true">
+        <div className="progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+    );
+  }
   return (
     <div
       className="progress"

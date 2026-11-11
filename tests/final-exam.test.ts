@@ -3,10 +3,11 @@
  * its chapters and questions, its own schedule and sessions, and progress that never mixes with
  * Integration Review.
  */
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
 import { createPgliteDb, type DB } from "../src/db/client";
 import { problems, sections, students, studySessions, type Student } from "../src/db/schema";
+import { seedDatabase } from "../src/db/seed";
 import { FINAL_PROBLEMS } from "../content/index";
 import type { Availability } from "../src/lib/availability";
 import { loadChecks, setCheck } from "../src/server/checklist";
@@ -34,9 +35,10 @@ beforeAll(async () => {
 });
 
 describe("the Final Exam environment", () => {
-  it("seeds the four chapters and their 79 questions as their own preparation, with the class date and time", async () => {
+  it("seeds the four chapters and their 102 questions as their own preparation, with the class date and time", async () => {
     const rows = await db.select({ id: sections.id, prep: sections.preparation }).from(sections);
-    expect(rows.filter((r) => r.prep === "final").map((r) => r.id)).toEqual(["2", "3", "4", "5"]);
+    // A plain select has no defined row order, so sort here (the app orders by `sort`; see the next test).
+    expect(rows.filter((r) => r.prep === "final").map((r) => r.id).sort()).toEqual(["2", "3", "4", "5"]);
     const seeded = await db.select({ id: problems.id, image: problems.image }).from(problems);
     const finalRows = seeded.filter((p) => isFinal(p.id));
     expect(finalRows.map((p) => p.id).sort()).toEqual(FINAL_PROBLEMS.map((p) => p.id).sort());
@@ -90,7 +92,7 @@ describe("the Final Exam environment", () => {
     const model = await loadStudentModel(db, student, MON, "final");
     expect(model.prep).toBe("final");
     expect(model.routes.session).toBe("/final-exam/session");
-    expect(model.problems).toHaveLength(79);
+    expect(model.problems).toHaveLength(102);
     expect(model.problems.every((p) => isFinal(p.id))).toBe(true);
     expect([...model.attemptById.values()].every((a) => isFinal(a.problemId))).toBe(true);
     expect(model.examDate).toBe("2026-12-14");
@@ -154,5 +156,56 @@ describe("the Final Exam environment", () => {
     const settings = await getSettings(db);
     expect(settings.final).toEqual({ name: "MTH 263 Final", date: "2026-12-15", time: "09:30" });
     expect([settings.examName, settings.examDate]).toEqual(["Exam 4", "2026-12-02"]);
+  });
+});
+
+describe("adding Chapter 3's questions to a database that already holds the earlier 79", () => {
+  it("adds the 23 missing questions and leaves every rating, review and tick where it was", async () => {
+    const old = await createPgliteDb(null);
+    // Make this database look like the one from before 367–391 were added: take the 23 new questions out.
+    const added = FINAL_PROBLEMS.filter((p) => p.section === "3" && p.openstax !== 386 && p.openstax !== 387).map((p) => p.id);
+    expect(added).toHaveLength(23);
+    await old.delete(problems).where(inArray(problems.id, added));
+    const finalIds = async () => (await old.select({ id: problems.id }).from(problems)).map((p) => p.id).filter(isFinal);
+    expect(await finalIds()).toHaveLength(79);
+
+    // A student who already studied in both environments (including one of Chapter 3's two old questions).
+    const { student } = await findOrCreateStudent(old, "Old", "Student");
+    const rateOld = async (problemId: string, rating: "got_it" | "shaky" | "lost") => {
+      const att = await openAttempt(old, student.id, problemId, { origin: "plan" });
+      return rateAttempt(old, student.id, att.id, rating, MON);
+    };
+    await rateOld("5.3-148", "got_it");
+    await rateOld("2-208", "lost");
+    await rateOld("3-386", "shaky");
+    await setCheck(old, student.id, "2-213", true);
+    const before = {
+      exam4: await loadStudentState(old, student.id, "exam4"),
+      final: await loadStudentState(old, student.id, "final"),
+      exam4Checks: [...(await loadChecks(old, student.id, "exam4"))],
+      finalChecks: [...(await loadChecks(old, student.id, "final"))],
+    };
+
+    // The release's seed adds only what is missing.
+    const { inserted } = await seedDatabase(old);
+    expect(inserted).toBe(23);
+    expect(await finalIds()).toHaveLength(102);
+
+    const after = {
+      exam4: await loadStudentState(old, student.id, "exam4"),
+      final: await loadStudentState(old, student.id, "final"),
+    };
+    expect(after.exam4.rated).toEqual(before.exam4.rated);
+    expect(after.exam4.pending).toEqual(before.exam4.pending);
+    expect(after.exam4.assigned).toEqual(before.exam4.assigned);
+    expect(after.final.rated).toEqual(before.final.rated);
+    expect(after.final.pending).toEqual(before.final.pending);
+    expect([...(await loadChecks(old, student.id, "exam4"))]).toEqual(before.exam4Checks);
+    expect([...(await loadChecks(old, student.id, "final"))]).toEqual(before.finalChecks);
+    // Chapter 3 now lists all 25 questions; the old rating is still on 386.
+    expect(after.final.assigned.filter((a) => a.sectionId === "3")).toHaveLength(25);
+    expect(after.final.rated.map((r) => r.problemId).sort()).toEqual(["2-208", "3-386"]);
+    // Seeding again changes nothing.
+    expect((await seedDatabase(old)).inserted).toBe(0);
   });
 });

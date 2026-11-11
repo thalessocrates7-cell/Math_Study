@@ -50,8 +50,20 @@ test("Final Exam sits directly under Settings, opens its own pages, and Integrat
   await expect(page.getByText("No Final Exam activity yet.")).toBeVisible();
   const coverage = page.getByRole("region", { name: "Question Coverage" });
   await expect(coverage).toContainText("Initial pool");
-  await expect(coverage).toContainText("Not yet attempted79");
+  await expect(coverage).toContainText("Not yet attempted102");
   await expect(coverage).toContainText("All of them are in the app.");
+
+  // Each chapter row is a link (named by its visible text) that opens that chapter in the Final Exam's Study Plan.
+  const chapter3 = coverage.getByRole("link", { name: /^3 Derivatives/ });
+  await expect(chapter3).toHaveAttribute("href", "/final-exam/plan?section=3&level=core");
+  await expect(chapter3).toHaveAccessibleDescription(/Opens Chapter 3 in the Study Plan\. 0 of 25 questions attempted\./);
+  await chapter3.click();
+  await expect(page).toHaveURL(/\/final-exam\/plan\?section=3&level=core$/);
+  await expect(page.getByRole("radio", { name: "3 Derivatives" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: /Core/ })).toBeChecked();
+  await expect(current(page, ".sidebar")).toHaveText("Study Plan");
+  await page.goBack();
+  await expect(page).toHaveURL(/\/final-exam$/);
 
   // The Final Exam's own pages keep the Final Exam sidebar.
   await side.getByRole("link", { name: "Study Plan" }).click();

@@ -1,22 +1,26 @@
 # Adaptive study system: progress and what's left
 
-Last updated: **2026-11-10 (Tue)**. Exam 4 is **Wed 2026-12-02**; the Final Exam is **Mon 2026-12-14, 2:00 PM**.
+Last updated: **2026-11-11 (Wed)**. Exam 4 is **Wed 2026-12-02**; the Final Exam is **Mon 2026-12-14, 2:00 PM**.
 
 - **Approved plan:** `C:\Users\thale\.claude\plans\c-users-thale-donloads-mth-263-calculus-federated-moth.md`.
 - **Older handoff:** `PROJECT_CONTEXT.md`, which describes the site as it was before this work.
 
-## Final Exam environment (2026-11-10): branch `final-exam` (commit `ca9426b`, not pushed), NOT live
+## Final Exam environment (2026-11-10, updated 2026-11-11): branch `final-exam` (pushed to `origin/final-exam`), NOT live
 
-Brief: `Downloads\MTH263_Final_Exam_Route_and_Dashboard_Brief.docx`. Plan: `~/.claude/plans/c-users-thale-downloads-mth263-final-exa-shimmering-wolf.md`.
-Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. The work is committed there (`ca9426b`), after every check below passed.
+Briefs: `Downloads\MTH263_Final_Exam_Route_and_Dashboard_Brief.docx`, and its update `Downloads\MTH263_Final_Exam_Brief.docx` (the only change: Chapter 3's Review Exercises 367–391 join the pool, 102 questions in all). Plan: `~/.claude/plans/c-users-thale-downloads-mth263-final-exa-shimmering-wolf.md`.
+Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it and is pushed to `origin/final-exam`. Nothing is merged into `main`.
 
 **Your answers (2026-11-10):**
 - Final Exam is a replica of the current pages for the final.
 - Inside it, the item under Settings says **Integration Review** and goes back.
 - The Final Exam has its own study schedule.
-- The 77-question pool is an initial pool and may grow.
+- The question pool is an initial pool and may grow.
 - The exam is 2:00 PM Eastern, editable by the admin.
 - This step builds the pages and the separate data; the question import comes later.
+
+**Your answers (2026-11-11):**
+- The exact Chapter 3 wording comes from your screenshots of OpenStax's Chapter 3 Review Exercises. They had not arrived when the questions were added (see "Chapter 3" below).
+- The 102-question pool stays an initial pool ("Initial pool" and "More may be added" stay on the Dashboard).
 
 **What it does:**
 - `/final-exam` (+ `/plan`, `/review`, `/progress`, `/session`, `/settings`, `/schedule`, `/practice/[id]`) are the same pages as the regular site. They come from shared views in `src/components/views/*View.tsx`, and every route passes `prep="exam4"` or `prep="final"`.
@@ -30,12 +34,12 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. 
 - `students.final_availability` and `final_exam_date_override` hold the Final Exam's own schedule and date.
 - `settings.final_exam_name`, `final_exam_date` and `final_exam_time` are null until set, falling back to `content/final-exam.ts`: Final Exam, 2026-12-14, 14:00.
 - A problem belongs to its section's preparation, so attempts, reviews and ticks are separated through the problem (`src/server/prep.ts`). No column was added to those tables, because a second column could disagree with the section.
-- The Final Exam's chapters are seeded as sections `2` Limits, `3` Derivatives, `4` Applications of Derivatives and `5` Integration (`content/final-exam.ts`). The candidate pool is `FINAL_POOL` in the same file: 79 numbers, the spec's 77 without 542 plus 386 and 387.
+- The Final Exam's chapters are seeded as sections `2` Limits, `3` Derivatives, `4` Applications of Derivatives and `5` Integration (`content/final-exam.ts`). The candidate pool is `FINAL_POOL` in the same file: 102 numbers, the spec's 77 (without 542) plus all 25 of Chapter 3's review exercises, 367–391.
 - **The 77 questions are imported** (2026-11-10, your answer: with hints, answers and worked solutions):
   - They are in `content/problems/final-2.ts`, `final-4.ts` and `final-5.ts`.
   - Statements follow the import spec; the group directions are repeated in each question. 232, 461 and 463 also restate the earlier exercise's formula, so each question stands alone.
   - Levels: Chapter 2 is 9 F, 13 C, 3 Ch; Chapter 4 is 6 F, 14 C, 7 Ch; Chapter 5 is 8 F, 14 C, 3 Ch.
-  - SymPy checks every computed answer (94 checks with 386–387). The 14 proofs, graph readings and sketches are marked manual, as in the Exam 4 bank.
+  - SymPy checks every computed answer (134 checks for the Final Exam's 102 questions). The 15 proofs, graph readings and sketches are marked manual, as in the Exam 4 bank.
   - 544's notation "y = 1/(x+1) = 1/2" is kept and read as solving 1/(x+1) = 1/2; the hint says so.
 - **Figures:** 212, 386, 387, 529, 530 and 551 show the original OpenStax figures. They were cropped from your screenshots (OneDrive\Pictures\Screenshots, 2026-11-10) into `public/figures/final/`.
   - Each figure has a full text description.
@@ -43,7 +47,16 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. 
   - **Chapter 3, Exercises 386 and 387** ("Draw the derivative for the following graphs"): your two extra screenshots, added at your request.
     - They live in a fourth Final Exam chapter, `3` Derivatives (`content/problems/final-3.ts`), with their graphs.
     - Both are Core. 387 is checked by SymPy; 386 is a sketch, so it is manual.
-    - The chapter assignment is my reading of the OpenStax numbering (the Chapter 3 review). Correct it if it's wrong.
+    - The updated brief confirms they belong to Chapter 3 (review exercises 367–391).
+- **Chapter 3, all 25 review exercises, 367–391** (2026-11-11, from the updated brief): the other 23 were added to `content/problems/final-3.ts` next to 386 and 387. Groups: 367–370 true/false, 371–372 limit definition, 373–380 differentiation rules (380 is implicit), 381–383 higher orders, 384–385 tangent lines, 386–387 derivative sketches, 388–389 the Ocean City water level, 390–391 the Hurricane Katrina wind speeds.
+  - **Wording is not yet checked against OpenStax.** No screenshots had arrived, so the text comes from the Chapter 3 appendix of your Stygian brief (`Downloads\MTH263_Stygian_Claude_Code_Brief_UPDATED.docx`). That appendix shortens OpenStax's instructions, so the instruction lines follow OpenStax's usual phrasing, and the items it marked unclear are read the usual OpenStax way:
+    - 371 √(x+4), 378 √(3x²+2), 379 (x/4)·sin⁻¹(x), and 383 with 4^x (the appendix has "4x").
+    - Also unverified: the questions' wording for 388–391 and the Katrina table's header ("Hour").
+    - **To settle it, send screenshots of those (or of the whole group).** The header comment in `final-3.ts` says the same.
+  - Levels: 7 Foundation (367–370, 373, 376, 382), 14 Core, 4 Challenge (379, 380, 383, 388). They are my judgment; change them in `final-3.ts`.
+  - Skills: the chapter has 11 skill tags (differentiability, limit definition, power/product/quotient rules, chain rule, exponential/log, trig/inverse trig, implicit, higher-order, tangent lines, derivative graphs, rates of change).
+  - SymPy checks (40 new): derivatives, the limit definitions, the implicit derivative, tangent lines, second and third derivatives, and the Ocean City and Katrina numbers. 367–369 are checked through the counterexamples (|x|, x²·sin(1/x)); only 370 (a proof) is manual.
+  - 388 and 389 give the answers in feet per hour, 390 and 391 in mph per hour (1.5 and −7.5).
 - The RAM data for 459–461 is a real table, and 460 and 461 use the model C(t) from 460. The 461 average is about $73.36.
 
 **Final Exam Dashboard:**
@@ -52,6 +65,7 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. 
 - With no questions, the study card says "Final Exam questions are on the way" and offers "Set your study times".
 - Recent Activity shows Final Exam ratings only.
 - Question Coverage takes the Study Plan Progress card's place. It shows attempted / not yet attempted (these add up to the pool) and, separately, awaiting review, checked again later and the latest self-reported ratings.
+  - Each chapter row is a link that opens that chapter in the Final Exam's Study Plan (`/final-exam/plan?section=3&level=core`). Its accessible name is its visible text; "Opens Chapter N in the Study Plan. x of y questions attempted." is its description, and the progress bar inside is decorative (`ProgressBar decorative`).
 
 **Admin:**
 - `/admin/settings` has a Final Exam card for name, date and start time.
@@ -60,23 +74,26 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. 
 
 **Checks:**
 - `tsc` passes, also with `--noUnusedLocals`.
-- `npx vitest run`: 124 tests in 14 files.
+- `npx vitest run`: 127 tests in 14 files (2026-11-11, after Chapter 3 was added).
   - New tests are in `tests/prep.test.ts`, `tests/coverage.test.ts` and `tests/final-exam.test.ts`; the last checks data separation both ways, separate schedules, sessions on the same day and settings.
-  - `tests/content.test.ts` checks the 79 questions: exactly the pool without 542, skill tags, all three levels in each full chapter, the 6 figures (real PNGs of the stated size), and the RAM table.
-- `npm run content:check`: 294 SymPy checks pass, 0 fail, 20 manual, across 252 problems.
+  - `tests/content.test.ts` checks the 102 questions: exactly the pool without 542, skill tags, all three levels in each chapter, the 6 figures (real PNGs of the stated size), the RAM table, the Katrina table and the Ocean City model.
+  - `tests/final-exam.test.ts` also adds the 23 Chapter 3 questions to a database that already holds the earlier 79, with ratings, reviews and ticks in both environments. Nothing is lost, a second seed adds nothing, and Chapter 3 then lists 25 questions.
+- `npm run content:check`: 334 SymPy checks pass, 0 fail, 21 manual, across 275 problems.
 - `next build` passes. Contrast and the content check pass.
-- Upgrade test, re-run after the questions were added:
-  - The live code (`mth263-fix` worktree) built a database with students, ratings, reviews, ticks, notes and an open session. The new code then migrated it and seeded the 4 chapters and 79 questions.
+- Upgrade test (run 2026-11-10 with 79 questions; no schema change since, the 23 new questions are plain inserts by the seed):
+  - The live code (`mth263-fix` worktree) built a database with students, ratings, reviews, ticks, notes and an open session. The new code then migrated it and seeded the 4 chapters and the questions.
   - No rows were lost, and every old row is `exam4`.
   - A Final Exam session can start the same day.
-- Browser check at 1440 px (dark) and 390 px (light), on a scratch database with 7 stand-in questions:
+- Browser check on a scratch database, 2026-11-10 (1440 px dark and 390 px light, 7 stand-in questions) and 2026-11-11 (the real 102 questions, port 3266, since stopped):
   - The return to `/plan?section=5.3&level=challenge` worked, and direct entry fell back to `/dashboard`.
   - A Final Exam session started, and rating kept it inside `/final-exam`.
   - `/practice/2-213` moved to `/final-exam/practice/2-213`.
   - The regular Dashboard and Review Queue stayed empty, and there was no horizontal scroll.
-- Playwright: 33 tests in 8 files pass, re-run after the import.
-  - Includes the new `e2e/8-final-exam.spec.ts` (with the 212 figure), the Final Exam pages in the axe checks (both themes) and the 390 px checks (including the figure question 2-212 and the table question 5-459), and the Final Exam start time in `e2e/2-admin.spec.ts`.
-  - The suite ran in four groups because the computer was low on memory: 5–8, then 1–2, then 3, then 4 last. Keep 1 and 2 in the same run, because the admin tests read the student "Ada Lovelace" that `1-student` creates.
+  - 2026-11-11: the Dashboard (102 questions, "Initial pool", Chapter 3 row 0/25), Chapter 3's Core list (14 exercises), 3-390 with the Katrina table at 1440 px light, and 3-388 and 3-383 (answer and worked solution open) at 390 px dark all looked right, with no horizontal overflow.
+- Playwright: 33 tests in 8 files pass, re-run 2026-11-11 after Chapter 3 was added.
+  - Includes `e2e/8-final-exam.spec.ts` (with the 212 figure, and a click on the Chapter 3 coverage row), the Final Exam pages in the axe checks (both themes) and the 390 px checks (the figure question 2-212, the table questions 5-459 and 3-390, the long-formula question 3-388 and Chapter 3's Core list), and the Final Exam start time in `e2e/2-admin.spec.ts`.
+  - **That re-run caught a bug in the clickable coverage rows (823cf72):** axe's label-in-name rule failed on them, because the `aria-label` I had put on each row didn't contain its visible text. Fixed (see the Dashboard notes above) and re-checked in both themes.
+  - The suite ran in groups because the computer was low on memory: 5–8, then 1–2, then 3 (with 1), then 4 last. Keep 1 and 2 (or 1 and 3) in the same run, because the admin and axe tests read the student that `1-student` creates.
 
 **Before it goes live (ask first):**
 - Back up first: a CSV export from `/admin` plus a Neon branch, because 0003 changes the live database.
@@ -85,6 +102,8 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. 
 - Done (your answers, 2026-11-10):
   - The 77 questions are imported with hints, answers and worked solutions, their figures, and the RAM table.
   - 386 and 387 were added as Chapter 3.
+- Done (your answer, 2026-11-11): the rest of Chapter 3, 367–391, is in (102 questions in all; the pool stays an initial pool).
+- Still open: send screenshots of Chapter 3 (at least 371, 378, 379, 383, and the wording of 388–391) so the text can be checked against OpenStax; look over the levels in `final-3.ts`.
 
 ## Status at a glance
 

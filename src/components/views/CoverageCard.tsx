@@ -63,13 +63,14 @@ export function CoverageCard({ coverage, planHref }: { coverage: { chapters: Cha
       <ul className="list">
         {chapters.map((c) => (
           <li key={c.sectionId}>
-            <Link className="row-link coverage-link" href={chapterHref(c.sectionId, "core", "final")} aria-label={`Open Chapter ${c.chapter} ${c.title} in the Study Plan: ${c.attempted} of ${c.total} attempted`}>
+            {/* The link's name is its visible text (label in name); where it goes is a description. */}
+            <Link className="row-link coverage-link" href={chapterHref(c.sectionId, "core", "final")} aria-describedby={`coverage-opens-${c.sectionId}`}>
               <span className="coverage-body">
                 <span className="progress-row">
                   <span className="small" style={{ fontWeight: 600 }}>
                     {c.sectionId} {c.title}
                   </span>
-                  <ProgressBar value={c.attempted} max={c.total} label={`Chapter ${c.chapter} ${c.title}: questions attempted`} />
+                  <ProgressBar decorative value={c.attempted} max={c.total} label={`Chapter ${c.chapter} ${c.title}: questions attempted`} />
                   <span className="small num" style={{ textAlign: "right" }}>
                     {c.attempted}/{c.total}
                   </span>
@@ -80,6 +81,9 @@ export function CoverageCard({ coverage, planHref }: { coverage: { chapters: Cha
               </span>
               <ChevronRight className="chev" size={18} aria-hidden="true" />
             </Link>
+            <span id={`coverage-opens-${c.sectionId}`} hidden>
+              Opens Chapter {c.chapter} in the Study Plan. {c.attempted} of {c.total} questions attempted.
+            </span>
           </li>
         ))}
       </ul>

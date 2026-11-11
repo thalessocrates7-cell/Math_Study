@@ -23,9 +23,13 @@ const STUDENT = [
   "/final-exam/session",
   "/final-exam/settings",
   "/final-exam/schedule",
-  // A question with an original figure, and one with the RAM data table.
+  // A question with an original figure, one with the RAM data table, one with the Katrina table,
+  // one with the long Ocean City model, and Chapter 3's Core list.
   "/final-exam/practice/2-212",
   "/final-exam/practice/5-459",
+  "/final-exam/practice/3-390",
+  "/final-exam/practice/3-388",
+  "/final-exam/plan?section=3&level=core",
 ];
 const ADMIN = ["/admin/dashboard", "/admin/students", "/admin/problems", "/admin/problems/5.2-72", "/admin/plan", "/admin/settings"];
 const SHOTS = "test-results/shots-e2e";
