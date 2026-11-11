@@ -12,8 +12,8 @@ export const FINAL_EXAM = {
 
 /**
  * The Final Exam's units: one per chapter, studied from the OpenStax chapter review exercises
- * (the questions are in problems/final-2.ts, final-4.ts and final-5.ts). These records belong to the
- * Final Exam preparation only (sections.preparation = 'final'), so its progress never mixes with the
+ * (the questions are in problems/final-2.ts ... final-5.ts). These records belong to the Final Exam
+ * preparation only (sections.preparation = 'final'), so its progress never mixes with the
  * Integration Review sections (4.10, 5.1–5.7).
  *
  * Objectives and skill tags are written for this site. The ids follow OpenStax's own chapter
@@ -44,10 +44,19 @@ export const FINAL_SECTIONS: SectionSeed[] = [
     ],
   },
   {
+    id: "3",
+    title: "Derivatives",
+    kind: "core",
+    sort: 2,
+    url: BOOK + "3-review-exercises",
+    objectives: ["Sketch the graph of a function's derivative from the graph of the function."],
+    concepts: [{ id: "derivative-graphs", label: "Graphing the derivative from a graph" }],
+  },
+  {
     id: "4",
     title: "Applications of Derivatives",
     kind: "core",
-    sort: 2,
+    sort: 3,
     url: BOOK + "4-review-exercises",
     objectives: [
       "Use the Mean Value Theorem and the first and second derivatives to describe a graph.",
@@ -73,7 +82,7 @@ export const FINAL_SECTIONS: SectionSeed[] = [
     id: "5",
     title: "Integration",
     kind: "core",
-    sort: 3,
+    sort: 4,
     url: BOOK + "5-review-exercises",
     objectives: [
       "Approximate integrals with left and right Riemann sums.",
@@ -96,12 +105,14 @@ const range = (from: number, to: number) => Array.from({ length: to - from + 1 }
 
 /**
  * The Final Exam's candidate question pool: the OpenStax chapter review exercises named in the
- * import specification (77 questions). It is the pool as currently known, not a promise that the
- * exam covers nothing else, so the site calls it the "initial pool". Edit the numbers here to grow it.
+ * import specification (77 questions), plus Chapter 3 Exercises 386 and 387, added at the owner's
+ * request. It is the pool as currently known, not a promise that the exam covers nothing else, so
+ * the site calls it the "initial pool". Edit the numbers here to grow it.
  * Chapter 4 Exercise 542 is left out on purpose (the L'Hôpital's Rule item).
  */
 export const FINAL_POOL: ReadonlyArray<{ sectionId: string; chapter: number; title: string; numbers: readonly number[]; excluded: readonly number[] }> = [
   { sectionId: "2", chapter: 2, title: "Limits", numbers: range(208, 232), excluded: [] },
+  { sectionId: "3", chapter: 3, title: "Derivatives", numbers: [386, 387], excluded: [] },
   { sectionId: "4", chapter: 4, title: "Applications of Derivatives", numbers: [...range(525, 541), ...range(543, 552)], excluded: [542] },
   { sectionId: "5", chapter: 5, title: "Integration", numbers: range(439, 463), excluded: [] },
 ];

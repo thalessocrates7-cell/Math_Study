@@ -14,7 +14,7 @@ A study site for **MTH 263 Exam 4** (OpenStax Calculus Volume 1, sections 4.10 a
 - Practice workspace: Get a Hint (one at a time), Reveal Answer, Worked Solution (step by step), notes box.
 - Confidence rating drives review: **Got it** returns in 14 days; **Shaky** returns tomorrow plus a similar problem; **Lost** serves an easier problem right away and the original returns tomorrow.
 - Dashboard (exam countdown, next step), review queue, progress charts, light and dark themes, phone layout with bottom tabs.
-- **Final Exam** (`/final-exam`): the same pages (Dashboard, Study Plan, Review Queue, My Progress, Today's Session, Settings) for the cumulative final, opened from the **Final Exam** item under Settings (on phones, the top bar). It has its own study schedule, sessions, reviews and progress; nothing mixes with the regular site. Inside it, **Integration Review** (the same spot in the sidebar) returns to the exact page the student left, or to `/dashboard` when the Final Exam was opened directly. Its units are the chapter review exercises: 2 Limits, 4 Applications of Derivatives, 5 Integration. The 77 questions (Exercise 542 left out) have hints, answers and worked solutions like the other problems; the pool is in `content/final-exam.ts` and the questions in `content/problems/final-*.ts`. Four questions show their original OpenStax figure (`public/figures/final/`).
+- **Final Exam** (`/final-exam`): the same pages (Dashboard, Study Plan, Review Queue, My Progress, Today's Session, Settings) for the cumulative final, opened from the **Final Exam** item under Settings (on phones, the top bar). It has its own study schedule, sessions, reviews and progress; nothing mixes with the regular site. Inside it, **Integration Review** (the same spot in the sidebar) returns to the exact page the student left, or to `/dashboard` when the Final Exam was opened directly. Its units are the chapter review exercises: 2 Limits, 3 Derivatives, 4 Applications of Derivatives, 5 Integration. The 79 questions have hints, answers and worked solutions like the other problems. They are the import spec's 77 (Exercise 542 left out) plus Chapter 3's Exercises 386 and 387. The pool is in `content/final-exam.ts` and the questions in `content/problems/final-*.ts`. Six questions show their original OpenStax figure (`public/figures/final/`).
 
 **Admin** (`/admin`)
 - Class overview, student list and per-student history, rename / merge / delete students.
@@ -70,7 +70,7 @@ dev/.venv/Scripts/python -m pip install sympy lark     # Windows; use dev/.venv/
 ## Project layout
 
 ```
-content/      Problem bank (source of truth): sections, concept tags, 173 problems in problems/*.ts; final-exam.ts (Final Exam chapters, date, pool) and its 77 questions in problems/final-*.ts
+content/      Problem bank (source of truth): sections, concept tags, 173 problems in problems/*.ts; final-exam.ts (Final Exam chapters, date, pool) and its 79 questions in problems/final-*.ts
 public/       Static files: figures/final/ (the original figures some Final Exam questions need)
 src/app/      Routes: landing, sign-in, (student)/… (and (student)/final-exam/…), admin/…, Server Actions in actions/
 src/components/views/  The student pages, shared by both environments (each route passes prep="exam4" or "final")

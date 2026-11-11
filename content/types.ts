@@ -87,8 +87,8 @@ export type ProblemSeed = {
   sort: number;
 };
 
-/** Integration Review sections (4.1 ... 5.7), then the Final Exam's chapters ("2", "4", "5"; see final-exam.ts). */
-export type SectionId = "4.1" | "4.2" | "4.10" | "5.1" | "5.2" | "5.3" | "5.4" | "5.5" | "5.6" | "5.7" | "2" | "4" | "5";
+/** Integration Review sections (4.1 ... 5.7), then the Final Exam's chapters ("2" ... "5"; see final-exam.ts). */
+export type SectionId = "4.1" | "4.2" | "4.10" | "5.1" | "5.2" | "5.3" | "5.4" | "5.5" | "5.6" | "5.7" | "2" | "3" | "4" | "5";
 
 /** Core sections are on Exam 4. Supplementary sections are optional extra practice and never count toward it. */
 export type SectionKind = "core" | "supplementary";

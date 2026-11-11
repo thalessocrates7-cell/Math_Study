@@ -50,7 +50,7 @@ test("Final Exam sits directly under Settings, opens its own pages, and Integrat
   await expect(page.getByText("No Final Exam activity yet.")).toBeVisible();
   const coverage = page.getByRole("region", { name: "Question Coverage" });
   await expect(coverage).toContainText("Initial pool");
-  await expect(coverage).toContainText("Not yet attempted77");
+  await expect(coverage).toContainText("Not yet attempted79");
   await expect(coverage).toContainText("All of them are in the app.");
 
   // The Final Exam's own pages keep the Final Exam sidebar.
@@ -58,6 +58,7 @@ test("Final Exam sits directly under Settings, opens its own pages, and Integrat
   await expect(page).toHaveURL(/\/final-exam\/plan/);
   await expect(current(page, ".sidebar")).toHaveText("Study Plan");
   await expect(page.getByRole("radio", { name: "2 Limits" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "3 Derivatives" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "4 Applications of Derivatives" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "5 Integration" })).toBeVisible();
 

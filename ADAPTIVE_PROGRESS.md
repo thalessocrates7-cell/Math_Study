@@ -30,17 +30,20 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. 
 - `students.final_availability` and `final_exam_date_override` hold the Final Exam's own schedule and date.
 - `settings.final_exam_name`, `final_exam_date` and `final_exam_time` are null until set, falling back to `content/final-exam.ts`: Final Exam, 2026-12-14, 14:00.
 - A problem belongs to its section's preparation, so attempts, reviews and ticks are separated through the problem (`src/server/prep.ts`). No column was added to those tables, because a second column could disagree with the section.
-- The Final Exam's chapters are seeded as sections `2` Limits, `4` Applications of Derivatives and `5` Integration (`content/final-exam.ts`). The candidate pool (77 numbers, without 542) is `FINAL_POOL` in the same file.
+- The Final Exam's chapters are seeded as sections `2` Limits, `3` Derivatives, `4` Applications of Derivatives and `5` Integration (`content/final-exam.ts`). The candidate pool is `FINAL_POOL` in the same file: 79 numbers, the spec's 77 without 542 plus 386 and 387.
 - **The 77 questions are imported** (2026-11-10, your answer: with hints, answers and worked solutions):
   - They are in `content/problems/final-2.ts`, `final-4.ts` and `final-5.ts`.
   - Statements follow the import spec; the group directions are repeated in each question. 232, 461 and 463 also restate the earlier exercise's formula, so each question stands alone.
   - Levels: Chapter 2 is 9 F, 13 C, 3 Ch; Chapter 4 is 6 F, 14 C, 7 Ch; Chapter 5 is 8 F, 14 C, 3 Ch.
-  - SymPy checks every computed answer (92 checks). The 13 proofs and graph readings are marked manual, as in the Exam 4 bank.
+  - SymPy checks every computed answer (94 checks with 386–387). The 14 proofs, graph readings and sketches are marked manual, as in the Exam 4 bank.
   - 544's notation "y = 1/(x+1) = 1/2" is kept and read as solving 1/(x+1) = 1/2; the hint says so.
-- **Figures:** 212, 529, 530 and 551 show the original OpenStax figures. They were cropped from your screenshots (OneDrive\Pictures\Screenshots, 2026-11-10) into `public/figures/final/`.
+- **Figures:** 212, 386, 387, 529, 530 and 551 show the original OpenStax figures. They were cropped from your screenshots (OneDrive\Pictures\Screenshots, 2026-11-10) into `public/figures/final/`.
   - Each figure has a full text description.
   - A new `problems.image` column carries them, folded into the unreleased migration 0003.
-  - Your two extra screenshots (Chapter 3 Exercises 386 and 387) are not part of the 77, so they are not imported.
+  - **Chapter 3, Exercises 386 and 387** ("Draw the derivative for the following graphs"): your two extra screenshots, added at your request.
+    - They live in a fourth Final Exam chapter, `3` Derivatives (`content/problems/final-3.ts`), with their graphs.
+    - Both are Core. 387 is checked by SymPy; 386 is a sketch, so it is manual.
+    - The chapter assignment is my reading of the OpenStax numbering (the Chapter 3 review). Correct it if it's wrong.
 - The RAM data for 459–461 is a real table, and 460 and 461 use the model C(t) from 460. The 461 average is about $73.36.
 
 **Final Exam Dashboard:**
@@ -59,11 +62,11 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. 
 - `tsc` passes, also with `--noUnusedLocals`.
 - `npx vitest run`: 124 tests in 14 files.
   - New tests are in `tests/prep.test.ts`, `tests/coverage.test.ts` and `tests/final-exam.test.ts`; the last checks data separation both ways, separate schedules, sessions on the same day and settings.
-  - `tests/content.test.ts` checks the 77 questions: exactly the pool without 542, skill tags, all three levels per chapter, the 4 figures (real PNGs of the stated size), and the RAM table.
-- `npm run content:check`: 292 SymPy checks pass, 0 fail, 19 manual, across 250 problems.
+  - `tests/content.test.ts` checks the 79 questions: exactly the pool without 542, skill tags, all three levels in each full chapter, the 6 figures (real PNGs of the stated size), and the RAM table.
+- `npm run content:check`: 294 SymPy checks pass, 0 fail, 20 manual, across 252 problems.
 - `next build` passes. Contrast and the content check pass.
 - Upgrade test, re-run after the questions were added:
-  - The live code (`mth263-fix` worktree) built a database with students, ratings, reviews, ticks, notes and an open session. The new code then migrated it and seeded the 77 questions.
+  - The live code (`mth263-fix` worktree) built a database with students, ratings, reviews, ticks, notes and an open session. The new code then migrated it and seeded the 4 chapters and 79 questions.
   - No rows were lost, and every old row is `exam4`.
   - A Final Exam session can start the same day.
 - Browser check at 1440 px (dark) and 390 px (light), on a scratch database with 7 stand-in questions:
@@ -73,13 +76,15 @@ Git: `main` = `adaptive` = `8734896` (live). `final-exam` was branched from it. 
   - The regular Dashboard and Review Queue stayed empty, and there was no horizontal scroll.
 - Playwright: 33 tests in 8 files pass, re-run after the import.
   - Includes the new `e2e/8-final-exam.spec.ts` (with the 212 figure), the Final Exam pages in the axe checks (both themes) and the 390 px checks (including the figure question 2-212 and the table question 5-459), and the Final Exam start time in `e2e/2-admin.spec.ts`.
-  - The suite ran in four groups because the computer was low on memory: 5–8, then 1–2, then 3, then 4 last.
+  - The suite ran in four groups because the computer was low on memory: 5–8, then 1–2, then 3, then 4 last. Keep 1 and 2 in the same run, because the admin tests read the student "Ada Lovelace" that `1-student` creates.
 
 **Before it goes live (ask first):**
 - Back up first: a CSV export from `/admin` plus a Neon branch, because 0003 changes the live database.
 - `vercel.json` turns off preview builds for `final-exam`. A preview would run against the live database without the migration.
 - The open decisions are in `WEBSITE_IDEAS.md` (Final Exam 7–10).
-- Done (your answer, 2026-11-10): the 77 questions are imported with hints, answers and worked solutions, the four figures, and the RAM table.
+- Done (your answers, 2026-11-10):
+  - The 77 questions are imported with hints, answers and worked solutions, their figures, and the RAM table.
+  - 386 and 387 were added as Chapter 3.
 
 ## Status at a glance
 

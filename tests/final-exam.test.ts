@@ -21,8 +21,8 @@ import { findOrCreateStudent, saveSchedule } from "../src/server/students";
 let db: DB;
 const MON = new Date("2026-11-09T18:00:00Z"); // 1 pm in New York
 const DAILY: Availability = { v: 1, days: Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((d) => [d, { sessions: 1, minutes: 60 }])) };
-/** A Final Exam question id: chapter 2, 4 or 5 and an exercise number (Integration Review ids have a dot). */
-const isFinal = (id: string) => /^[245]-\d+$/.test(id);
+/** A Final Exam question id: chapter 2–5 and an exercise number (Integration Review ids have a dot). */
+const isFinal = (id: string) => /^[2-5]-\d+$/.test(id);
 
 async function rate(student: Student, problemId: string, rating: "got_it" | "shaky" | "lost", now = MON) {
   const att = await openAttempt(db, student.id, problemId, { origin: "plan" });
@@ -34,13 +34,13 @@ beforeAll(async () => {
 });
 
 describe("the Final Exam environment", () => {
-  it("seeds the three chapters and their 77 questions as their own preparation, with the class date and time", async () => {
+  it("seeds the four chapters and their 79 questions as their own preparation, with the class date and time", async () => {
     const rows = await db.select({ id: sections.id, prep: sections.preparation }).from(sections);
-    expect(rows.filter((r) => r.prep === "final").map((r) => r.id)).toEqual(["2", "4", "5"]);
+    expect(rows.filter((r) => r.prep === "final").map((r) => r.id)).toEqual(["2", "3", "4", "5"]);
     const seeded = await db.select({ id: problems.id, image: problems.image }).from(problems);
     const finalRows = seeded.filter((p) => isFinal(p.id));
     expect(finalRows.map((p) => p.id).sort()).toEqual(FINAL_PROBLEMS.map((p) => p.id).sort());
-    expect(finalRows.filter((p) => p.image).map((p) => p.id).sort()).toEqual(["2-212", "4-529", "4-530", "4-551"]);
+    expect(finalRows.filter((p) => p.image).map((p) => p.id).sort()).toEqual(["2-212", "3-386", "3-387", "4-529", "4-530", "4-551"]);
     expect(rows.filter((r) => r.prep === "exam4").map((r) => r.id)).toContain("5.3");
     expect(await prepOfProblem(db, "2-208")).toBe("final");
     expect(await prepOfProblem(db, "5.3-148")).toBe("exam4");
@@ -65,7 +65,7 @@ describe("the Final Exam environment", () => {
     expect(final.pending.length).toBeGreaterThan(0);
     expect(final.pending.every((i) => isFinal(i.problemId))).toBe(true);
     expect(exam4.sections.map((s) => s.id)).not.toContain("2");
-    expect(final.sections.map((s) => s.id)).toEqual(["2", "4", "5"]);
+    expect(final.sections.map((s) => s.id)).toEqual(["2", "3", "4", "5"]);
     // The Final Exam has no fixed plan: each chapter lists all of its active questions, by level, then number.
     const ch2 = final.assigned.filter((a) => a.sectionId === "2");
     expect(ch2).toHaveLength(25);
@@ -90,7 +90,7 @@ describe("the Final Exam environment", () => {
     const model = await loadStudentModel(db, student, MON, "final");
     expect(model.prep).toBe("final");
     expect(model.routes.session).toBe("/final-exam/session");
-    expect(model.problems).toHaveLength(77);
+    expect(model.problems).toHaveLength(79);
     expect(model.problems.every((p) => isFinal(p.id))).toBe(true);
     expect([...model.attemptById.values()].every((a) => isFinal(a.problemId))).toBe(true);
     expect(model.examDate).toBe("2026-12-14");

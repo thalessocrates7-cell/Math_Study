@@ -52,6 +52,7 @@ export async function DashboardView({ prep }: { prep: Prep }) {
   const dueToday = state.pending.filter((i) => i.dueDate <= today);
   const due = dueToday.length ? { problemId: dueToday[0].problemId, href: practiceLink(prep, dueToday[0].problemId, { item: dueToday[0].id }), count: dueToday.length } : null;
   const hasQuestions = loaded.problems.some((p) => p.active);
+  const chapterList = FINAL_POOL.map((c) => c.chapter).join(", ").replace(/, (\d+)$/, " and $1");
   const unit = final ? "Chapters" : "Sections";
 
   return (
@@ -155,8 +156,8 @@ export async function DashboardView({ prep }: { prep: Prep }) {
                     Final Exam questions are on the way
                   </h2>
                   <p className="text-2">
-                    The review questions for Chapters 2, 4 and 5 haven&apos;t been added yet. Once they are, your next activity shows up here, sized to
-                    your Final Exam study times.
+                    The review questions for Chapters {chapterList} haven&apos;t been added yet. Once they are, your next activity shows up here, sized
+                    to your Final Exam study times.
                   </p>
                 </div>
                 <Link className={`btn btn-block ${loaded.hasSchedule ? "btn-secondary" : "btn-primary"}`} href={routes.schedule}>

@@ -143,11 +143,12 @@ describe("the Final Exam's date, time and countdown", () => {
 });
 
 describe("the Final Exam's chapters and candidate pool", () => {
-  it("has the three chapters and the 77 questions of the import specification, without 542", () => {
-    expect(FINAL_SECTIONS.map((s) => `${s.id} ${s.title}`)).toEqual(["2 Limits", "4 Applications of Derivatives", "5 Integration"]);
+  it("has the 77 questions of the import specification (without 542), plus Chapter 3's 386 and 387", () => {
+    expect(FINAL_SECTIONS.map((s) => `${s.id} ${s.title}`)).toEqual(["2 Limits", "3 Derivatives", "4 Applications of Derivatives", "5 Integration"]);
     const count = (id: string) => FINAL_POOL.find((c) => c.sectionId === id)!.numbers.length;
     expect([count("2"), count("4"), count("5")]).toEqual([25, 27, 25]);
-    expect(FINAL_POOL.reduce((m, c) => m + c.numbers.length, 0)).toBe(77);
+    expect(FINAL_POOL.find((c) => c.sectionId === "3")!.numbers).toEqual([386, 387]);
+    expect(FINAL_POOL.reduce((m, c) => m + c.numbers.length, 0)).toBe(79);
     const ch4 = FINAL_POOL.find((c) => c.sectionId === "4")!;
     expect(ch4.numbers).not.toContain(542);
     expect(ch4.numbers[0]).toBe(525);

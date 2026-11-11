@@ -84,11 +84,12 @@ describe("problem bank content", () => {
 });
 
 describe("Final Exam questions", () => {
-  it("imports exactly the 77 pool questions in their chapters, numbered as in OpenStax, without 542", () => {
+  it("imports exactly the pool's questions in their chapters, numbered as in OpenStax, without 542", () => {
     const ids = FINAL_PROBLEMS.map((p) => p.id).sort();
     const expected = FINAL_POOL.flatMap((c) => c.numbers.map((n) => `${c.sectionId}-${n}`)).sort();
     expect(ids).toEqual(expected);
-    expect(ids).toHaveLength(77);
+    // The spec's 77, plus Chapter 3's 386 and 387 (added at the owner's request).
+    expect(ids).toHaveLength(79);
     expect(ids).not.toContain("4-542");
     for (const p of FINAL_PROBLEMS) expect(p.openstax, p.id).toBe(Number(p.id.split("-")[1]));
   });
@@ -108,16 +109,18 @@ describe("Final Exam questions", () => {
     }
   });
 
-  it("gives every chapter Foundation, Core and Challenge questions (the planner needs all three)", () => {
+  it("gives every full chapter Foundation, Core and Challenge questions (the planner uses all three)", () => {
     for (const s of FINAL_SECTIONS) {
       const list = FINAL_PROBLEMS.filter((p) => p.section === s.id);
+      // Chapter 3 holds only the two graph questions 386 and 387.
+      if (list.length < 10) continue;
       for (const d of ["F", "C", "Ch"] as const) expect(list.filter((p) => p.difficulty === d).length, `${s.id} ${d}`).toBeGreaterThan(1);
     }
   });
 
-  it("shows the four original figures, each a real image of the stated size with a full description", () => {
+  it("shows the six original figures, each a real image of the stated size with a full description", () => {
     const withImage = FINAL_PROBLEMS.filter((p) => p.image);
-    expect(withImage.map((p) => p.id).sort()).toEqual(["2-212", "4-529", "4-530", "4-551"]);
+    expect(withImage.map((p) => p.id).sort()).toEqual(["2-212", "3-386", "3-387", "4-529", "4-530", "4-551"]);
     for (const p of withImage) {
       const img = p.image!;
       const bytes = readFileSync(`public${img.src}`);
