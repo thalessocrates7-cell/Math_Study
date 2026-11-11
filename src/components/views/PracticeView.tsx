@@ -5,6 +5,7 @@ import { DIFFICULTIES, DIFFICULTY_BLURB, DIFFICULTY_LABEL } from "@content/types
 import { skipItemAction } from "@/app/actions/session";
 import { DifficultyBadge, problemLabel, RatingPill } from "@/components/Badges";
 import { FunctionPlot } from "@/components/FunctionPlot";
+import { SourceFigure } from "@/components/SourceFigure";
 import { PageTransition } from "@/components/PageTransition";
 import { Workspace } from "@/components/practice/Workspace";
 import { ProgressBar } from "@/components/Progress";
@@ -255,7 +256,7 @@ export async function PracticeView({ prep, params, searchParams }: PracticeProps
           estimateMinutes={bar ? bar.item.minutes : null}
           tag={tag}
           statementHtml={renderRich(problem.statement)}
-          figure={problem.figure ? <FunctionPlot spec={problem.figure} /> : null}
+          figure={problem.figure ? <FunctionPlot spec={problem.figure} /> : problem.image ? <SourceFigure image={problem.image} /> : null}
           hintsHtml={problem.hints.map((h) => renderRich(h))}
           answerHtml={renderRich(problem.answer)}
           steps={problem.steps.map((s) => ({ title: s.title, html: renderRich(s.body) }))}

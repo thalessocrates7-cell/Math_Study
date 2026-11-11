@@ -11,12 +11,13 @@ export const FINAL_EXAM = {
 } as const;
 
 /**
- * The Final Exam's units: one per chapter, studied from the OpenStax chapter review exercises.
- * These records belong to the Final Exam preparation only (sections.preparation = 'final'), so its
- * progress never mixes with the Integration Review sections (4.10, 5.1–5.7).
+ * The Final Exam's units: one per chapter, studied from the OpenStax chapter review exercises
+ * (the questions are in problems/final-2.ts, final-4.ts and final-5.ts). These records belong to the
+ * Final Exam preparation only (sections.preparation = 'final'), so its progress never mixes with the
+ * Integration Review sections (4.10, 5.1–5.7).
  *
- * Objectives and skill tags are a first draft written for this site, to be reviewed when the
- * questions are imported. The ids follow OpenStax's own chapter numbering ("2 Limits").
+ * Objectives and skill tags are written for this site. The ids follow OpenStax's own chapter
+ * numbering ("2 Limits").
  */
 export const FINAL_SECTIONS: SectionSeed[] = [
   {
@@ -60,7 +61,7 @@ export const FINAL_SECTIONS: SectionSeed[] = [
       { id: "graph-shape", label: "Increasing, decreasing and concavity" },
       { id: "linear-approximation", label: "Linear approximations and differentials" },
       { id: "extrema", label: "Critical points and extrema" },
-      { id: "limits-infinity", label: "Limits at infinity" },
+      { id: "limits", label: "Limits at infinity and 0/0 forms" },
       { id: "newtons-method", label: "Newton's method" },
       { id: "antiderivatives", label: "Antiderivatives" },
       { id: "curve-sketching", label: "Sketching graphs" },

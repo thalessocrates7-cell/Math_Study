@@ -15,7 +15,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { Check, ConceptSeed, PlotSpec, Step } from "../../content/types";
+import type { Check, ConceptSeed, PlotSpec, ProblemImage, Step } from "../../content/types";
 import type { Availability } from "../lib/availability";
 import type { Reason } from "../lib/reasons";
 import type { RulesOverride } from "../lib/rules";
@@ -86,6 +86,8 @@ export const problems = pgTable(
     concepts: jsonb("concepts").$type<string[]>().notNull(),
     statement: text("statement").notNull(),
     figure: jsonb("figure").$type<PlotSpec | null>(),
+    /** An original source figure (public/figures/...), e.g. an OpenStax graph the question depends on. */
+    image: jsonb("image").$type<ProblemImage | null>(),
     hints: jsonb("hints").$type<string[]>().notNull(),
     answer: text("answer").notNull(),
     steps: jsonb("steps").$type<Step[]>().notNull(),

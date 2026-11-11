@@ -42,25 +42,33 @@ test("Final Exam sits directly under Settings, opens its own pages, and Integrat
   const days = daysToFinal();
   if (days > 1) await expect(exam).toContainText(`${days}days remaining`);
 
-  // Nothing studied yet: zero progress and honest empty states, never sample numbers.
+  // Nothing studied yet: zero progress and an honest start, never sample numbers.
   await expect(page.getByRole("link", { name: "0 Completed" })).toBeVisible();
   await expect(page.getByRole("link", { name: "0 Chapters mastered" })).toBeVisible();
   await expect(page.locator(".due-banner")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Final Exam questions are on the way" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Start Studying/ })).toBeVisible();
   await expect(page.getByText("No Final Exam activity yet.")).toBeVisible();
   const coverage = page.getByRole("region", { name: "Question Coverage" });
   await expect(coverage).toContainText("Initial pool");
   await expect(coverage).toContainText("Not yet attempted77");
+  await expect(coverage).toContainText("All of them are in the app.");
 
   // The Final Exam's own pages keep the Final Exam sidebar.
   await side.getByRole("link", { name: "Study Plan" }).click();
-  await expect(page).toHaveURL(/\/final-exam\/plan$/);
+  await expect(page).toHaveURL(/\/final-exam\/plan/);
   await expect(current(page, ".sidebar")).toHaveText("Study Plan");
-  await expect(page.getByRole("heading", { name: "No Final Exam questions yet" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "2 Limits" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "4 Applications of Derivatives" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "5 Integration" })).toBeVisible();
 
   // A reload (or a direct link) still opens the Final Exam for a signed-in student.
   await page.reload();
-  await expect(page).toHaveURL(/\/final-exam\/plan$/);
+  await expect(page).toHaveURL(/\/final-exam\/plan/);
+  await expect(current(page, ".sidebar")).toHaveText("Study Plan");
+
+  // A question that depends on a figure shows the original graph with its description.
+  await page.goto("/final-exam/practice/2-212");
+  await expect(page.getByRole("img", { name: /Graph of a piecewise function f/ })).toBeVisible();
   await expect(current(page, ".sidebar")).toHaveText("Study Plan");
 
   // Back to the exact place: 5.3 at the Challenge level.

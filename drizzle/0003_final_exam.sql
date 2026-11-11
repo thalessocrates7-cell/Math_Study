@@ -1,5 +1,6 @@
 CREATE TYPE "public"."preparation" AS ENUM('exam4', 'final');--> statement-breakpoint
 DROP INDEX "study_sessions_slot_idx";--> statement-breakpoint
+ALTER TABLE "problems" ADD COLUMN "image" jsonb;--> statement-breakpoint
 ALTER TABLE "sections" ADD COLUMN "preparation" "preparation" DEFAULT 'exam4' NOT NULL;--> statement-breakpoint
 ALTER TABLE "settings" ADD COLUMN "final_exam_name" text;--> statement-breakpoint
 ALTER TABLE "settings" ADD COLUMN "final_exam_date" date;--> statement-breakpoint

@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ALL_PROBLEMS, CORE_SECTIONS, DEFAULT_PLAN, SECTIONS } from "../content/index";
+import { ALL_PROBLEMS, CORE_SECTIONS, DEFAULT_PLAN, FINAL_POOL, FINAL_PROBLEMS, FINAL_SECTIONS, SECTIONS } from "../content/index";
 import { renderRich } from "../src/lib/tex";
 
 describe("problem bank content", () => {
@@ -79,5 +80,61 @@ describe("problem bank content", () => {
       const all = JSON.stringify(p);
       expect(all.includes("[object Object]") || /\bNaN\b/.test(all), p.id).toBe(false);
     }
+  });
+});
+
+describe("Final Exam questions", () => {
+  it("imports exactly the 77 pool questions in their chapters, numbered as in OpenStax, without 542", () => {
+    const ids = FINAL_PROBLEMS.map((p) => p.id).sort();
+    const expected = FINAL_POOL.flatMap((c) => c.numbers.map((n) => `${c.sectionId}-${n}`)).sort();
+    expect(ids).toEqual(expected);
+    expect(ids).toHaveLength(77);
+    expect(ids).not.toContain("4-542");
+    for (const p of FINAL_PROBLEMS) expect(p.openstax, p.id).toBe(Number(p.id.split("-")[1]));
+  });
+
+  it("uses each chapter's skill tags, and every tag is used", () => {
+    for (const s of FINAL_SECTIONS) {
+      const known = new Set(s.concepts.map((c) => c.id));
+      const used = new Set<string>();
+      for (const p of FINAL_PROBLEMS.filter((x) => x.section === s.id)) {
+        expect(p.concepts.length, p.id).toBeGreaterThan(0);
+        for (const c of p.concepts) {
+          expect(known.has(c), `${p.id} uses unknown concept ${c}`).toBe(true);
+          used.add(c);
+        }
+      }
+      for (const c of known) expect(used.has(c), `chapter ${s.id} concept ${c} is unused`).toBe(true);
+    }
+  });
+
+  it("gives every chapter Foundation, Core and Challenge questions (the planner needs all three)", () => {
+    for (const s of FINAL_SECTIONS) {
+      const list = FINAL_PROBLEMS.filter((p) => p.section === s.id);
+      for (const d of ["F", "C", "Ch"] as const) expect(list.filter((p) => p.difficulty === d).length, `${s.id} ${d}`).toBeGreaterThan(1);
+    }
+  });
+
+  it("shows the four original figures, each a real image of the stated size with a full description", () => {
+    const withImage = FINAL_PROBLEMS.filter((p) => p.image);
+    expect(withImage.map((p) => p.id).sort()).toEqual(["2-212", "4-529", "4-530", "4-551"]);
+    for (const p of withImage) {
+      const img = p.image!;
+      const bytes = readFileSync(`public${img.src}`);
+      expect(bytes.subarray(1, 4).toString("latin1"), `${p.id} is a PNG`).toBe("PNG");
+      expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)], `${p.id} size`).toEqual([img.width, img.height]);
+      expect(img.alt.length, `${p.id} alt`).toBeGreaterThan(120);
+    }
+  });
+
+  it("keeps the RAM table with 459–461, and the previous exercise's data with 232 and 463", () => {
+    for (const id of ["5-459", "5-460", "5-461"]) {
+      const q = FINAL_PROBLEMS.find((p) => p.id === id)!.statement;
+      for (const row of ["| 1980 | 0 |", "| 1985 | −5,468,750 |", "| 1990 | −755,495 |", "| 1995 | −73,005 |", "| 2000 | −29,768 |", "| 2005 | −918 |", "| 2010 | −177 |"]) {
+        expect(q, id).toContain(row);
+      }
+    }
+    expect(FINAL_PROBLEMS.find((p) => p.id === "2-232")!.statement).toContain("x(t)=t^2-2t+4");
+    expect(FINAL_PROBLEMS.find((p) => p.id === "5-463")!.statement).toContain("v(t)=6400t^2-6505t+2686");
   });
 });

@@ -1,12 +1,13 @@
 /**
  * The Final Exam environment against a real (in-memory) Postgres with the real migrations and seed:
- * its chapters, its own schedule and sessions, and progress that never mixes with Integration Review.
- * The Final Exam's questions aren't in content/ yet, so a few stand-in problems are added here.
+ * its chapters and questions, its own schedule and sessions, and progress that never mixes with
+ * Integration Review.
  */
 import { eq } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
 import { createPgliteDb, type DB } from "../src/db/client";
 import { problems, sections, students, studySessions, type Student } from "../src/db/schema";
+import { FINAL_PROBLEMS } from "../content/index";
 import type { Availability } from "../src/lib/availability";
 import { loadChecks, setCheck } from "../src/server/checklist";
 import { loadStudentModel } from "../src/server/model";
@@ -20,27 +21,8 @@ import { findOrCreateStudent, saveSchedule } from "../src/server/students";
 let db: DB;
 const MON = new Date("2026-11-09T18:00:00Z"); // 1 pm in New York
 const DAILY: Availability = { v: 1, days: Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((d) => [d, { sessions: 1, minutes: 60 }])) };
-const FINAL_IDS = ["2-208", "2-213", "2-214", "2-223", "5-447", "5-448"];
-
-async function addFinalProblem(id: string, difficulty: "F" | "C" | "Ch", concepts: string[]) {
-  const [sectionId, n] = id.split("-");
-  await db.insert(problems).values({
-    id,
-    sectionId,
-    openstaxNumber: Number(n),
-    difficulty,
-    concepts,
-    statement: `Stand-in question ${id}.`,
-    hints: ["A hint."],
-    answer: "An answer.",
-    steps: [
-      { title: "One", body: "Step one." },
-      { title: "Two", body: "Step two." },
-    ],
-    check: { kind: "manual", note: "test" },
-    sort: Number(n),
-  });
-}
+/** A Final Exam question id: chapter 2, 4 or 5 and an exercise number (Integration Review ids have a dot). */
+const isFinal = (id: string) => /^[245]-\d+$/.test(id);
 
 async function rate(student: Student, problemId: string, rating: "got_it" | "shaky" | "lost", now = MON) {
   const att = await openAttempt(db, student.id, problemId, { origin: "plan" });
@@ -49,18 +31,16 @@ async function rate(student: Student, problemId: string, rating: "got_it" | "sha
 
 beforeAll(async () => {
   db = await createPgliteDb(null);
-  await addFinalProblem("2-208", "C", ["limit-facts"]);
-  await addFinalProblem("2-213", "C", ["limits-algebra"]);
-  await addFinalProblem("2-214", "F", ["limits-algebra"]);
-  await addFinalProblem("2-223", "Ch", ["squeeze"]);
-  await addFinalProblem("5-447", "C", ["definite-integrals"]);
-  await addFinalProblem("5-448", "C", ["definite-integrals"]);
 });
 
 describe("the Final Exam environment", () => {
-  it("seeds the three chapters as their own preparation, with the class date and time", async () => {
+  it("seeds the three chapters and their 77 questions as their own preparation, with the class date and time", async () => {
     const rows = await db.select({ id: sections.id, prep: sections.preparation }).from(sections);
     expect(rows.filter((r) => r.prep === "final").map((r) => r.id)).toEqual(["2", "4", "5"]);
+    const seeded = await db.select({ id: problems.id, image: problems.image }).from(problems);
+    const finalRows = seeded.filter((p) => isFinal(p.id));
+    expect(finalRows.map((p) => p.id).sort()).toEqual(FINAL_PROBLEMS.map((p) => p.id).sort());
+    expect(finalRows.filter((p) => p.image).map((p) => p.id).sort()).toEqual(["2-212", "4-529", "4-530", "4-551"]);
     expect(rows.filter((r) => r.prep === "exam4").map((r) => r.id)).toContain("5.3");
     expect(await prepOfProblem(db, "2-208")).toBe("final");
     expect(await prepOfProblem(db, "5.3-148")).toBe("exam4");
@@ -81,13 +61,20 @@ describe("the Final Exam environment", () => {
     const final = await loadStudentState(db, student.id, "final");
     expect(exam4.rated.map((r) => r.problemId)).toEqual(["5.3-148"]);
     expect(final.rated.map((r) => r.problemId)).toEqual(["2-208"]);
-    expect(exam4.pending.every((i) => !FINAL_IDS.includes(i.problemId))).toBe(true);
+    expect(exam4.pending.every((i) => !isFinal(i.problemId))).toBe(true);
     expect(final.pending.length).toBeGreaterThan(0);
-    expect(final.pending.every((i) => FINAL_IDS.includes(i.problemId))).toBe(true);
+    expect(final.pending.every((i) => isFinal(i.problemId))).toBe(true);
     expect(exam4.sections.map((s) => s.id)).not.toContain("2");
     expect(final.sections.map((s) => s.id)).toEqual(["2", "4", "5"]);
-    // The Final Exam has no fixed plan: each chapter lists all of its active questions, by level.
-    expect(final.assigned.filter((a) => a.sectionId === "2").map((a) => a.problemId)).toEqual(["2-214", "2-208", "2-213", "2-223"]);
+    // The Final Exam has no fixed plan: each chapter lists all of its active questions, by level, then number.
+    const ch2 = final.assigned.filter((a) => a.sectionId === "2");
+    expect(ch2).toHaveLength(25);
+    const order = { F: 0, C: 1, Ch: 2 } as const;
+    for (let i = 1; i < ch2.length; i++) {
+      const [a, b] = [ch2[i - 1], ch2[i]];
+      expect(order[a.difficulty] < order[b.difficulty] || (a.difficulty === b.difficulty && a.openstaxNumber! < b.openstaxNumber!)).toBe(true);
+    }
+    expect(ch2[0].problemId).toBe("2-208");
     expect(exam4.assigned.length).toBe(exam4Before.assigned.length);
 
     expect([...(await loadChecks(db, student.id, "exam4"))]).toEqual(["5.3-148"]);
@@ -103,12 +90,13 @@ describe("the Final Exam environment", () => {
     const model = await loadStudentModel(db, student, MON, "final");
     expect(model.prep).toBe("final");
     expect(model.routes.session).toBe("/final-exam/session");
-    expect(model.problems.map((p) => p.id).sort()).toEqual([...FINAL_IDS].sort());
-    expect([...model.attemptById.values()].every((a) => FINAL_IDS.includes(a.problemId))).toBe(true);
+    expect(model.problems).toHaveLength(77);
+    expect(model.problems.every((p) => isFinal(p.id))).toBe(true);
+    expect([...model.attemptById.values()].every((a) => isFinal(a.problemId))).toBe(true);
     expect(model.examDate).toBe("2026-12-14");
     expect(model.examTime).toBe("14:00");
     const regular = await loadStudentModel(db, student, MON, "exam4");
-    expect(regular.problems.some((p) => FINAL_IDS.includes(p.id))).toBe(false);
+    expect(regular.problems.some((p) => isFinal(p.id))).toBe(false);
     expect(regular.examTime).toBeNull();
 
     const ws = await workspaceData(db, student.id, "2-208");
@@ -147,8 +135,8 @@ describe("the Final Exam environment", () => {
     ]);
     const finalItems = await sessionItemsOf(db, final);
     expect(finalItems.length).toBeGreaterThan(0);
-    expect(finalItems.every((i) => FINAL_IDS.includes(i.problemId))).toBe(true);
-    expect((await sessionItemsOf(db, regular)).some((i) => FINAL_IDS.includes(i.problemId))).toBe(false);
+    expect(finalItems.every((i) => isFinal(i.problemId))).toBe(true);
+    expect((await sessionItemsOf(db, regular)).some((i) => isFinal(i.problemId))).toBe(false);
     expect(practiceHref(finalItems[0], "final")).toBe(`/final-exam/practice/${finalItems[0].problemId}?s=${finalItems[0].id}`);
 
     // Solving the Final Exam session's first problem continues inside the Final Exam.

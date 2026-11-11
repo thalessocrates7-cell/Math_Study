@@ -15,7 +15,7 @@ const STUDENT = [
   "/progress",
   "/settings",
   "/schedule",
-  // The Final Exam's own pages (before its questions are added: the honest empty states).
+  // The Final Exam's own pages.
   "/final-exam",
   "/final-exam/plan",
   "/final-exam/review",
@@ -23,6 +23,9 @@ const STUDENT = [
   "/final-exam/session",
   "/final-exam/settings",
   "/final-exam/schedule",
+  // A question with an original figure, and one with the RAM data table.
+  "/final-exam/practice/2-212",
+  "/final-exam/practice/5-459",
 ];
 const ADMIN = ["/admin/dashboard", "/admin/students", "/admin/problems", "/admin/problems/5.2-72", "/admin/plan", "/admin/settings"];
 const SHOTS = "test-results/shots-e2e";

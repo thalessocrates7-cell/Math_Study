@@ -1,4 +1,4 @@
-import type { Check, Difficulty, PlotSpec, ProblemSeed, SectionId, Step } from "./types";
+import type { Check, Difficulty, PlotSpec, ProblemImage, ProblemSeed, SectionId, Step } from "./types";
 
 /** Tag for TeX-heavy strings: keeps backslashes literal. */
 export const t = String.raw;
@@ -14,6 +14,7 @@ type ProblemInput = {
   steps: Array<[string, string]>;
   check: Check | Check[];
   figure?: PlotSpec;
+  image?: ProblemImage;
 };
 
 /** Builds the problems for one section with consistent ids and sort order. */
@@ -29,6 +30,7 @@ export function sectionProblems(section: SectionId, items: ProblemInput[]): Prob
       concepts: p.c,
       statement: p.q,
       figure: p.figure,
+      image: p.image,
       hints: p.hints,
       answer: p.a,
       steps,

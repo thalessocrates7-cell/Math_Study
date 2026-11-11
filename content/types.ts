@@ -59,6 +59,13 @@ export type PlotSpec = {
   alt: string;
 };
 
+/**
+ * An original source figure (e.g. an OpenStax graph the question depends on), served from public/.
+ * `width`/`height` are the image's pixel size (reserved on the page so nothing jumps while it loads).
+ * `alt` must describe everything the question needs from the picture.
+ */
+export type ProblemImage = { src: string; alt: string; width: number; height: number };
+
 export type ProblemSeed = {
   /** Stable id, e.g. "5.2-80" (section + OpenStax exercise number) or "5.4-o1" for originals. */
   id: string;
@@ -70,6 +77,8 @@ export type ProblemSeed = {
   concepts: string[];
   statement: string;
   figure?: PlotSpec;
+  /** An original source figure the question depends on (shown instead of a drawn graph). */
+  image?: ProblemImage;
   hints: string[];
   answer: string;
   steps: Step[];

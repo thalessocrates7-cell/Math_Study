@@ -3739,3 +3739,20 @@ details.table-view summary {
     transition: none;
   }
 }
+
+/* An original source figure (e.g. an OpenStax graph): the image itself on a white panel in both themes. */
+.source-figure {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+}
+
+.source-figure img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 360px;
+}
