@@ -1,73 +1,129 @@
 /*
- * Design tokens (design doc §1). Every color is defined once as light-dark(light, dark); the theme
- * follows the OS unless <html data-theme="light|dark"> pins it. dev/contrast.mjs checks the pairs.
+ * Design tokens. Every color is defined once as light-dark(light, stygian).
+ *
+ * Stygian ("The Forgotten Library", the owner's visual specification v2.1) is the default look:
+ * near-black and walnut surfaces, an oxblood accent, antique-gold hairlines and ivory text.
+ * <html data-theme="light"> pins the earlier light look, whose values are unchanged.
+ * dev/contrast.mjs checks the pairs in both. Where the specification's hex is too dark to read on
+ * a dark surface (status text, progress fills), the hue is kept and the value is lifted: the
+ * changes are listed in docs/stygian/TOKENS.md.
  */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
   /* surfaces */
-  --bg: light-dark(#f7f8fa, #111827);
-  --surface: light-dark(#ffffff, #1f2937);
-  --surface-2: light-dark(#f4f5f9, #243042);
-  --sunken: light-dark(#eef0f5, #172030);
+  --bg: light-dark(#f7f8fa, #0b080b);
+  --surface: light-dark(#ffffff, #15121a);
+  --surface-2: light-dark(#f4f5f9, #211a20);
+  --surface-hover: light-dark(#f4f5f9, #2a2025);
+  /* the primary study card (Stygian: a raised panel with an aged-gold edge) */
+  --surface-raised: light-dark(#ffffff, #211a20);
+  --border-raised: light-dark(#e3e6ed, #5c452c);
+  /* a faint lit top edge on cards and filled buttons (none in the light look) */
+  --card-sheen: light-dark(rgb(255 255 255 / 0), rgb(244 237 227 / 0.045));
+  --btn-sheen: light-dark(rgb(255 255 255 / 0), rgb(255 236 220 / 0.1));
+  /* neutral chips, step numbers and loading placeholders */
+  --sunken: light-dark(#eef0f5, #2b2226);
+
+  /* the app shell: sidebar, phone top bar and tab bar, with a hairline edge (aged gold-brown in
+     Stygian) and a faint walnut warmth at the top of the sidebar */
+  --chrome-bg: light-dark(#ffffff, #15121a);
+  --chrome-edge: light-dark(#e3e6ed, #5c452c);
+  --chrome-glow: light-dark(rgb(255 255 255 / 0), rgb(110 74 46 / 0.16));
+  --brand-glyph: light-dark(#ffffff, #e6c766);
 
   /* text */
-  --text: light-dark(#18243a, #e5e7eb);
-  --text-2: light-dark(#3f4b61, #c5cbd5);
-  --muted: light-dark(#5d687d, #a0a9b8);
+  --text: light-dark(#18243a, #f4ede3);
+  --text-2: light-dark(#3f4b61, #b8aa99);
+  --muted: light-dark(#5d687d, #a39584);
 
   /* lines */
-  --border: light-dark(#e3e6ed, #2f3b4e);
-  --border-strong: light-dark(#7f889b, #6b778d);
-  --grid-line: light-dark(#e9ebf0, #2a3546);
+  --border: light-dark(#e3e6ed, #4a3628);
+  --border-strong: light-dark(#7f889b, #8a6b45);
+  --grid-line: light-dark(#e9ebf0, #2c2228);
 
-  /* accent: indigo (light) and the doc's violet (dark) for filled buttons, whose text label
-     identifies them. Progress fills and indicators use --chart-accent, which clears 3:1 in both themes. */
-  --accent: light-dark(#6558d3, #7c3aed);
-  --accent-hover: light-dark(#5747c9, #6d2edb);
-  --accent-active: light-dark(#4b3db5, #5f25c4);
-  --on-accent: light-dark(#ffffff, #ffffff);
-  --accent-text: light-dark(#5345c6, #b9aeff);
-  --accent-soft: light-dark(#eeecfb, #2b2858);
-  --accent-soft-text: light-dark(#4637b8, #cfc7ff);
-  --focus-ring: light-dark(#6558d3, #a89bff);
+  /* accent: filled buttons and selected items (oxblood in Stygian), whose text label identifies
+     them. Small accent text is antique gold in Stygian: oxblood is too dark to read on a dark surface.
+     Progress fills and indicators use --chart-accent, which clears 3:1 in both themes. */
+  --accent: light-dark(#6558d3, #7a1f2b);
+  --accent-hover: light-dark(#5747c9, #932b35);
+  --accent-active: light-dark(#4b3db5, #681a25);
+  --on-accent: light-dark(#ffffff, #f4ede3);
+  --accent-text: light-dark(#5345c6, #d4af37);
+  --accent-soft: light-dark(#eeecfb, #3a1722);
+  --accent-soft-text: light-dark(#4637b8, #f4ede3);
+  --focus-ring: light-dark(#6558d3, #a9b8c9);
+  --selection: light-dark(#eeecfb, #7a1f2b);
+
+  /* the page the student is on, in the sidebar: a filled item with a marker on its left edge */
+  --nav-active-bg: light-dark(#eeecfb, #7a1f2b);
+  --nav-active-text: light-dark(#4637b8, #f4ede3);
+  --nav-marker: light-dark(#6558d3, #d4af37);
+  /* due counts beside Review Queue (they stay visible on the filled current item) */
+  --count-bg: light-dark(#6558d3, #be3b4e);
+  --count-text: light-dark(#ffffff, #fffaf2);
+  /* the edge of a chosen chip (current worked-solution step, study day, section) */
+  --selected-edge: light-dark(#6558d3, #d4af37);
+  /* the Dashboard's countdown */
+  --accent-numeral: light-dark(#5345c6, #e8798a);
+
+  /* fine detail (Stygian: hairlines and ornament only, never a large fill) and cool highlights */
+  --gold: light-dark(#8a6a12, #d4af37);
+  --moonlight: light-dark(#4b5f78, #a9b8c9);
+  --btn-primary-edge: light-dark(transparent, rgb(212 175 55 / 0.42));
+  --switch-knob: light-dark(#ffffff, #f4ede3);
+  --switch-edge: light-dark(transparent, #8a6b45);
 
   /* status (always paired with an icon and a word) */
-  --success-icon: light-dark(#16a34a, #34d399);
-  --success-text: light-dark(#157041, #6ee7b7);
-  --success-soft: light-dark(#e7f6ee, #163a2f);
-  --warning-icon: light-dark(#b26b00, #fbbf24);
-  --warning-text: light-dark(#8a4b06, #fcd34d);
-  --warning-soft: light-dark(#fdf3df, #3a2f18);
-  --danger-icon: light-dark(#dc2626, #f87171);
-  --danger-text: light-dark(#b42318, #fca5a5);
-  --danger-soft: light-dark(#fdecec, #3d2024);
+  --success-icon: light-dark(#16a34a, #5db362);
+  --success-text: light-dark(#157041, #8fd694);
+  --success-soft: light-dark(#e7f6ee, #14271a);
+  --warning-icon: light-dark(#b26b00, #c48f32);
+  --warning-text: light-dark(#8a4b06, #c48f32);
+  --warning-soft: light-dark(#fdf3df, #2b2010);
+  --danger-icon: light-dark(#dc2626, #d9555b);
+  --danger-text: light-dark(#b42318, #f08a8f);
+  --danger-soft: light-dark(#fdecec, #33151a);
+  --info-text: light-dark(#4637b8, #b4cbe6);
+  --info-soft: light-dark(#eeecfb, #17212f);
 
-  /* difficulty (always shown with its letter and name) */
-  --diff-f: light-dark(#0e6e8c, #67d3ef);
-  --diff-f-soft: light-dark(#e5f4f8, #133445);
-  --diff-c: light-dark(#5345c6, #c3b9ff);
-  --diff-c-soft: light-dark(#eeecfb, #2b2858);
-  --diff-ch: light-dark(#9a1f9e, #f0a6f3);
-  --diff-ch-soft: light-dark(#fbeafb, #3a1e3d);
-  /* Text on the solid level badges on the Study Plan (the --diff-* colors become the badge fill). */
-  --on-diff: light-dark(#ffffff, #161226);
+  /* difficulty (always shown with its letter and name). Stygian: Foundation is moonlight, Core is
+     antique gold and Challenge is oxblood. "-solid" fills the Study Plan's level badge (with its
+     "on" text); "-line" draws borders and bar segments. */
+  --diff-f: light-dark(#0e6e8c, #a9b8c9);
+  --diff-f-soft: light-dark(#e5f4f8, #1a2330);
+  --diff-f-solid: light-dark(#0e6e8c, #a9b8c9);
+  --diff-f-line: light-dark(#0e6e8c, #a9b8c9);
+  --on-diff-f: light-dark(#ffffff, #14181e);
+  --diff-c: light-dark(#5345c6, #d4af37);
+  --diff-c-soft: light-dark(#eeecfb, #2b230f);
+  --diff-c-solid: light-dark(#5345c6, #d4af37);
+  --diff-c-line: light-dark(#5345c6, #d4af37);
+  --on-diff-c: light-dark(#ffffff, #1a1408);
+  --diff-ch: light-dark(#9a1f9e, #f4e3e0);
+  --diff-ch-soft: light-dark(#fbeafb, #5a1822);
+  --diff-ch-solid: light-dark(#9a1f9e, #7a1f2b);
+  --diff-ch-line: light-dark(#9a1f9e, #c8485b);
+  --on-diff-ch: light-dark(#ffffff, #f4ede3);
 
-  /* charts (validated with the dataviz palette checker; labels carry identity) */
+  /* charts (validated with the dataviz palette checker on each theme's surface; labels carry identity) */
   --chart-got: light-dark(#0c7352, #27a37a);
   --chart-shaky: light-dark(#e8a10a, #c08708);
   --chart-lost: light-dark(#f2706b, #c1403f);
-  --chart-new: light-dark(#e3e6ed, #374151);
-  --chart-accent: light-dark(#6558d3, #8b7cf6);
+  --chart-new: light-dark(#e3e6ed, #3a3035);
+  --chart-accent: light-dark(#6558d3, #be3b4e);
+  /* a progress bar's track (Stygian: a dark groove with a faint edge) */
+  --track: light-dark(#eef0f5, #0d0a0e);
+  --track-edge: light-dark(transparent, #3a2b25);
 
   /* depth */
-  --shadow-color: light-dark(rgb(16 24 40 / 0.07), rgb(0 0 0 / 0.35));
+  --shadow-color: light-dark(rgb(16 24 40 / 0.07), rgb(0 0 0 / 0.5));
   --shadow-sm: 0 1px 2px var(--shadow-color), 0 1px 3px var(--shadow-color);
   --shadow-md: 0 4px 12px var(--shadow-color), 0 1px 3px var(--shadow-color);
   --shadow-lg: 0 16px 40px var(--shadow-color), 0 2px 6px var(--shadow-color);
-  --overlay: light-dark(rgb(16 24 40 / 0.45), rgb(0 0 0 / 0.6));
+  --overlay: light-dark(rgb(16 24 40 / 0.45), rgb(4 2 4 / 0.72));
   /* edge shadow on sideways-scrolling tables (decorative, not a text pair) */
-  --scroll-shadow: light-dark(rgb(16 24 40 / 0.16), rgb(0 0 0 / 0.55));
+  --scroll-shadow: light-dark(rgb(16 24 40 / 0.16), rgb(0 0 0 / 0.6));
 
   /* shape and space (8px grid) */
   --radius-sm: 8px;
@@ -83,8 +139,12 @@
   --space-7: 40px;
   --space-8: 48px;
 
-  /* type */
+  /* type: Inter for body and controls. Stygian sets page, section, card and dialog titles in
+     Playfair Display; the light look keeps them in Inter (see the light block below). */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-playfair), "Playfair Display", Georgia, "Times New Roman", serif;
+  /* 1 keeps the tight letter-spacing Inter headings use; 0 leaves Playfair at its own spacing. */
+  --display-tight: 0;
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -107,8 +167,11 @@
   --dur-slow: 300ms;
 }
 
+/* The light look: the same tokens resolve to their first value, and headings stay in Inter. */
 :root[data-theme="light"] {
   color-scheme: light;
+  --font-display: var(--font-sans);
+  --display-tight: 1;
 }
 
 :root[data-theme="dark"] {

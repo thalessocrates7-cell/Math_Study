@@ -43,7 +43,7 @@ export function ProgressRing({ value, max, label, size = 56 }: { value: number; 
       aria-valuemax={max}
       aria-valuenow={value}
     >
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--sunken)" strokeWidth={stroke} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track)" strokeWidth={stroke} />
       {pct > 0 ? (
         <circle
           cx={size / 2}

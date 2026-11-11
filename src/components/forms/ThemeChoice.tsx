@@ -1,20 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { setTheme } from "@/app/actions/auth";
-import { crossFade } from "@/lib/motion";
+import { useTheme, type Look } from "@/components/ThemeToggle";
 
 type Pref = "light" | "dark" | "system";
 
-const OPTIONS: Array<{ value: Pref; label: string; hint: string }> = [
+const OPTIONS: Array<{ value: Look; label: string; hint: string }> = [
+  { value: "dark", label: "Stygian", hint: "The dark Forgotten Library look (default)" },
   { value: "light", label: "Light", hint: "White and light gray" },
-  { value: "dark", label: "Dark", hint: "Dark gray, easier at night" },
-  { value: "system", label: "System", hint: "Match this device" },
 ];
 
+/** Settings: the two looks. It follows the sidebar's Dark Mode switch, and the switch follows it. */
 export function ThemeChoice({ initial }: { initial: Pref }) {
-  const [value, setValue] = useState<Pref>(initial);
-  const [pending, startTransition] = useTransition();
+  const { current, pending, choose } = useTheme(initial);
   return (
     <fieldset className="stack-sm">
       <legend className="label" style={{ marginBottom: 8 }}>
@@ -22,20 +19,7 @@ export function ThemeChoice({ initial }: { initial: Pref }) {
       </legend>
       {OPTIONS.map((o) => (
         <label key={o.value} className="checkbox">
-          <input
-            type="radio"
-            name="theme"
-            value={o.value}
-            checked={value === o.value}
-            onChange={() => {
-              setValue(o.value);
-              crossFade(() => {
-                if (o.value === "system") delete document.documentElement.dataset.theme;
-                else document.documentElement.dataset.theme = o.value;
-              });
-              startTransition(() => setTheme(o.value));
-            }}
-          />
+          <input type="radio" name="theme" value={o.value} checked={current === o.value} onChange={() => choose(o.value)} />
           <span>
             <strong>{o.label}</strong> <span className="muted">– {o.hint}</span>
           </span>

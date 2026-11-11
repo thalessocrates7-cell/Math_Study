@@ -58,7 +58,8 @@ export async function DashboardView({ prep }: { prep: Prep }) {
   return (
     <PageTransition>
       <div className="page">
-        <header className="page-header">
+        {/* "atmos" puts the Stygian library picture behind this header (styles: "the library atmosphere"). */}
+        <header className={final ? "page-header atmos atmos-final" : "page-header atmos"}>
           <div>
             <p className="eyebrow">{formatLongDate(today)}</p>
             <h1>
@@ -146,7 +147,7 @@ export async function DashboardView({ prep }: { prep: Prep }) {
           {hasQuestions ? (
             <StudyCard loaded={loaded} progress={progressById} firstTime={stats.completed === 0} due={due} />
           ) : (
-            <section className="card" aria-labelledby="next-title">
+            <section className="card card-raised" aria-labelledby="next-title">
               <div className="stack">
                 <p className="eyebrow" style={{ margin: 0 }}>
                   Recommended next

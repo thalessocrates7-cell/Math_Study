@@ -5,6 +5,69 @@ Last updated: **2026-11-11 (Wed)**. Exam 4 is **Wed 2026-12-02**; the Final Exam
 - **Approved plan:** `C:\Users\thale\.claude\plans\c-users-thale-donloads-mth-263-calculus-federated-moth.md`.
 - **Older handoff:** `PROJECT_CONTEXT.md`, which describes the site as it was before this work.
 
+## Stygian look ("The Forgotten Library", 2026-11-11): branch `stygian`, local only, NOT pushed
+
+**Sources:**
+- Spec: `Downloads\MTH263_Stygian_Visual_Design_Specification` (.md, .docx and .pdf; v2.1).
+- Plan: `~/.claude/plans/c-users-thale-downloads-mth263-final-exa-shimmering-wolf.md`.
+
+**Git:** `stygian` was branched from `final-exam` (`e3a2226`), because the Final Exam pages the spec covers exist only there. It is a visual skin: no data changes and no migration.
+
+**Your answers (2026-11-11):**
+- Stygian is the default for everyone; the light look is kept as a saved choice.
+- Visual skin first; the spec's new features go to the backlog (`WEBSITE_IDEAS.md`).
+- You will add the asset pack.
+- Stop for your review after the first look.
+
+**Checkpoint 1, the first look: done, waiting for your review.**
+- **Colors:** `src/styles/tokens.css` maps the spec's palette onto the existing tokens. The light values are unchanged.
+  - Where the spec's hex is too dark to read on a dark surface, the hue stays and the value is lifted. Examples: progress fills `#BE3B4E`, links and small accent text in antique gold, the success, error and info text.
+  - Every change and the reason for it: `docs/stygian/TOKENS.md`.
+- **Theme behavior:**
+  - The sidebar's Dark Mode switch, the phone top bar's button and Settings ("Stygian" / "Light") all stay in step.
+  - The device setting no longer decides.
+  - Stored values didn't change: `system` and `dark` show Stygian, and `light` shows the light look.
+  - The browser bar color follows the look.
+- **Type:** Playfair Display (`next/font/google`) for page, section, card and dialog titles and the "MTH 263" name. Inter for everything else. The light look keeps Inter titles.
+- **Shell:**
+  - The sidebar, top bar and tab bar have an aged-gold edge. The current item is oxblood with a gold marker.
+  - Due counts are crimson, so they stay visible on the current item.
+  - The brand tile is oxblood with a gold ∫.
+- **Shared components:**
+  - Cards have a faint lit top edge. The primary study card is raised, with a gold edge.
+  - Primary buttons are oxblood with a gold edge.
+  - The progress bar is a dark groove.
+  - The focus ring is moonlight.
+  - A chosen chip's edge is gold.
+- **Both Dashboards:**
+  - The library picture (`bg_01`) sits behind the header as CSS layers, with a shade.
+  - The Final Exam's copy is mirrored, so its moonlit window sits on the right.
+  - It is hidden in the light look, with "more contrast", with forced colors and in print.
+- **Assets:**
+  - The pack hadn't arrived, so the picture comes from the spec `.docx` (1536 wide).
+  - Web copies are in `public/stygian/` (AVIF and WebP, 768 and 1536 wide), made by `node dev/stygian-assets.mjs <originals folder>`.
+  - When the pack arrives, re-run the script on it. The names stay the same. See `docs/stygian/ASSETS.md`.
+- **Text over the picture:** the brightest pixel under every header word was measured, with the words hidden.
+  - Lowest ratios: 6.61 (Dashboard, 1440 px), 6.52 (Final Exam, 1440 px), 6.43 (Dashboard, 390 px), 6.40 (Final Exam, 390 px).
+  - Text needs 4.5.
+- **Checks (2026-11-11):**
+  - contrast and tsc: pass.
+  - Vitest: 127 pass.
+  - SymPy: 334 pass.
+  - build: pass.
+  - Playwright: 34 pass, in groups 5–9, 1+2, 1+3 and 4.
+- **Test changes:**
+  - New `e2e/9-stygian.spec.ts`: default look, light choice, the picture on both Dashboards only, and every web copy loads.
+  - The theme test in `1-student` is updated.
+  - `3-a11y` now audits Stygian and the light look by setting the theme cookie, on a device that prefers light. Every page passes axe in both.
+- **Screenshots for review:** `test-results/stygian-review/` (Dashboard and Final Exam at 1440 and 390, the light Dashboard, practice 2-212).
+
+**Next checkpoints (after your OK):**
+- 2: practice: the problem surface, hints, answer, the worked-solution dialog, the ratings, figures and tables.
+- 3: Study Plan, Today's Session, Review Queue (empty state with the candlelit desk), My Progress, Settings and Schedule, in both environments.
+- 4: landing, sign-in and admin.
+- 5: polish (the gold divider between major sections, corner ornaments on hero cards only, states, motion).
+
 ## Final Exam environment (2026-11-10, updated 2026-11-11): branch `final-exam` (pushed to `origin/final-exam`), NOT live
 
 Briefs: `Downloads\MTH263_Final_Exam_Route_and_Dashboard_Brief.docx`, and its update `Downloads\MTH263_Final_Exam_Brief.docx` (the only change: Chapter 3's Review Exercises 367–391 join the pool, 102 questions in all). Plan: `~/.claude/plans/c-users-thale-downloads-mth263-final-exa-shimmering-wolf.md`.

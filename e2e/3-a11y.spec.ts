@@ -34,32 +34,42 @@ const STUDENT = [
 const ADMIN = ["/admin/dashboard", "/admin/students", "/admin/problems", "/admin/problems/5.2-72", "/admin/plan", "/admin/settings"];
 const SHOTS = "test-results/shots-e2e";
 
-async function audit(page: Page, url: string) {
+type Look = "stygian" | "light";
+
+async function audit(page: Page, url: string, look: Look) {
   await page.goto(url);
   await page.waitForLoadState("networkidle");
+  // Make sure the look being audited is the one on screen.
+  if (look === "light") await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  else await expect(page.locator("html")).not.toHaveAttribute("data-theme", "light");
   const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
   const serious = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   const report = serious.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).slice(0, 4).join(" | ")}`);
-  expect(report, `axe violations on ${url}`).toEqual([]);
+  expect(report, `axe violations on ${url} (${look})`).toEqual([]);
 }
 
-for (const scheme of ["light", "dark"] as const) {
-  test.describe(`${scheme} theme`, () => {
-    test.use({ colorScheme: scheme });
+// Stygian is the default look whatever the device prefers; the light look is a saved choice (the
+// theme cookie). So each look is audited by setting that cookie, on a device that prefers light.
+for (const look of ["stygian", "light"] as const) {
+  test.describe(`${look} look`, () => {
+    test.use({ colorScheme: "light" });
+    test.beforeEach(async ({ context, baseURL }) => {
+      if (look === "light") await context.addCookies([{ name: "mth_theme", value: "light", url: baseURL! }]);
+    });
 
     test("public pages pass axe", async ({ page }) => {
-      for (const url of PUBLIC) await audit(page, url);
+      for (const url of PUBLIC) await audit(page, url, look);
     });
 
     test("student pages pass axe", async ({ page }) => {
       await signIn(page, "Grace", "Hopper");
-      for (const url of STUDENT) await audit(page, url);
+      for (const url of STUDENT) await audit(page, url, look);
     });
 
     test("admin pages pass axe", async ({ page }) => {
       await adminSignIn(page, E2E_ADMIN_CODE);
       await expect(page).toHaveURL(/\/admin\/dashboard$/);
-      for (const url of ADMIN) await audit(page, url);
+      for (const url of ADMIN) await audit(page, url, look);
     });
   });
 }

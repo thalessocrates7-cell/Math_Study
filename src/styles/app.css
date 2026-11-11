@@ -33,16 +33,24 @@ h4 {
   color: var(--text);
 }
 
+/* Page, section, card and dialog titles use the display face (Playfair Display in Stygian, Inter
+   in the light look). Its numerals are set lining, so "5.3" and "MTH 263" sit on the baseline. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums;
+}
+
 h1 {
   font-size: var(--text-2xl);
   font-weight: 700;
-  letter-spacing: -0.015em;
+  letter-spacing: calc(-0.015em * var(--display-tight));
 }
 
 h2 {
   font-size: var(--text-lg);
   font-weight: 650;
-  letter-spacing: -0.01em;
+  letter-spacing: calc(-0.01em * var(--display-tight));
 }
 
 h3 {
@@ -80,7 +88,7 @@ textarea {
 }
 
 ::selection {
-  background: var(--accent-soft);
+  background: var(--selection);
   color: var(--text);
 }
 
@@ -211,8 +219,8 @@ textarea {
   gap: var(--space-3);
   height: 56px;
   padding: 0 var(--space-4);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--chrome-bg);
+  border-bottom: 1px solid var(--chrome-edge);
   /* Stays on top of the moving content during page transitions ("motion: route transitions"). */
   view-transition-name: app-topbar;
 }
@@ -225,8 +233,8 @@ textarea {
   grid-template-columns: repeat(5, 1fr);
   height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: var(--chrome-bg);
+  border-top: 1px solid var(--chrome-edge);
   view-transition-name: app-tabbar;
 }
 
@@ -257,7 +265,7 @@ textarea {
   right: 25%;
   height: 3px;
   border-radius: 0 0 3px 3px;
-  background: var(--chart-accent);
+  background: var(--nav-marker);
   view-transition-name: tab-indicator;
 }
 
@@ -286,7 +294,7 @@ textarea {
     display: grid;
     grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
     /* Paint the sidebar column to the bottom of long pages (the sidebar itself is sticky). */
-    background: linear-gradient(90deg, var(--surface) calc(var(--sidebar-w) - 1px), var(--border) calc(var(--sidebar-w) - 1px) var(--sidebar-w), var(--bg) var(--sidebar-w));
+    background: linear-gradient(90deg, var(--chrome-bg) calc(var(--sidebar-w) - 1px), var(--chrome-edge) calc(var(--sidebar-w) - 1px) var(--sidebar-w), var(--bg) var(--sidebar-w));
   }
 
   .sidebar {
@@ -297,8 +305,8 @@ textarea {
     gap: var(--space-5);
     height: 100dvh;
     padding: var(--space-5) var(--space-4);
-    background: var(--surface);
-    border-right: 1px solid var(--border);
+    background: linear-gradient(180deg, var(--chrome-glow), transparent 360px), var(--chrome-bg);
+    border-right: 1px solid var(--chrome-edge);
     overflow-y: auto;
   }
 
@@ -328,7 +336,8 @@ textarea {
   height: 36px;
   border-radius: 10px;
   background: var(--accent);
-  color: var(--on-accent);
+  color: var(--brand-glyph);
+  box-shadow: inset 0 0 0 1px var(--btn-primary-edge);
   font-family: "Times New Roman", Georgia, serif;
   font-size: 1.35rem;
   font-style: italic;
@@ -342,9 +351,11 @@ textarea {
 }
 
 .brand-name strong {
+  font-family: var(--font-display);
   font-size: var(--text-base);
   font-weight: 750;
-  letter-spacing: -0.01em;
+  font-variant-numeric: lining-nums;
+  letter-spacing: calc(-0.01em * var(--display-tight));
 }
 
 .brand-name span {
@@ -378,13 +389,13 @@ textarea {
 }
 
 .nav-link:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
   color: var(--text);
 }
 
 .nav-link[aria-current="page"] {
-  background: var(--accent-soft);
-  color: var(--accent-soft-text);
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
   font-weight: 650;
 }
 
@@ -396,7 +407,7 @@ textarea {
   left: 0;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: var(--chart-accent);
+  background: var(--nav-marker);
   view-transition-name: nav-indicator;
 }
 
@@ -409,8 +420,8 @@ textarea {
   min-width: 22px;
   padding: 1px 7px;
   border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--count-bg);
+  color: var(--count-text);
   font-size: 0.75rem;
   font-weight: 700;
   text-align: center;
@@ -422,8 +433,8 @@ textarea {
   height: 18px;
   padding: 0 5px;
   border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--count-bg);
+  color: var(--count-text);
   font-size: 0.6875rem;
   font-weight: 700;
   line-height: 18px;
@@ -437,7 +448,7 @@ textarea {
   flex-direction: column;
   gap: var(--space-2);
   padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--chrome-edge);
 }
 
 .user-chip {
@@ -537,7 +548,13 @@ a.avatar:hover {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: inset 0 1px 0 var(--card-sheen), var(--shadow-sm);
+}
+
+/* The primary study card: a slightly raised panel (Stygian gives it an aged-gold edge). */
+.card-raised {
+  border-color: var(--border-raised);
+  background: var(--surface-raised);
 }
 
 @media (min-width: 720px) {
@@ -617,9 +634,10 @@ a.avatar:hover {
 }
 
 .btn-primary {
+  border-color: var(--btn-primary-edge);
   background: var(--accent);
   color: var(--on-accent);
-  box-shadow: var(--shadow-sm);
+  box-shadow: inset 0 1px 0 var(--btn-sheen), var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -637,7 +655,7 @@ a.avatar:hover {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .btn-ghost {
@@ -689,7 +707,7 @@ a.avatar:hover {
 }
 
 .icon-btn:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
   color: var(--text);
 }
 
@@ -809,7 +827,8 @@ a.avatar:hover {
   height: 8px;
   overflow: hidden;
   border-radius: var(--radius-pill);
-  background: var(--sunken);
+  background: var(--track);
+  box-shadow: inset 0 0 0 1px var(--track-edge);
 }
 
 .progress-fill {
@@ -932,7 +951,7 @@ a.avatar:hover {
 }
 
 .row-link:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .row-main {
@@ -1100,7 +1119,8 @@ a.avatar:hover {
   width: 18px;
   height: 18px;
   margin-top: 2px;
-  accent-color: var(--accent);
+  /* The indicator color clears 3:1 on the surface in both themes (oxblood itself would not). */
+  accent-color: var(--chart-accent);
 }
 
 fieldset {
@@ -1140,8 +1160,8 @@ legend {
 }
 
 .alert-info {
-  background: var(--accent-soft);
-  color: var(--accent-soft-text);
+  background: var(--info-soft);
+  color: var(--info-text);
 }
 
 .alert-warning {
@@ -1381,7 +1401,7 @@ legend {
 }
 
 .site-nav a:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
   color: var(--text);
 }
 
@@ -1408,7 +1428,7 @@ legend {
 .hero h1 {
   font-size: var(--text-3xl);
   font-weight: 780;
-  letter-spacing: -0.025em;
+  letter-spacing: calc(-0.025em * var(--display-tight));
   line-height: 1.08;
 }
 
@@ -1658,7 +1678,7 @@ legend {
 }
 
 .exam-days strong {
-  color: var(--accent-text);
+  color: var(--accent-numeral);
   font-size: var(--text-2xl);
   font-weight: 800;
   line-height: 1;
@@ -1682,7 +1702,7 @@ legend {
   background: var(--surface);
   color: var(--text);
   text-decoration: none;
-  box-shadow: var(--shadow-sm);
+  box-shadow: inset 0 1px 0 var(--card-sheen), var(--shadow-sm);
   transition: border-color var(--dur-fast) var(--ease);
 }
 
@@ -1898,8 +1918,8 @@ a.stat-tile:hover {
   margin-top: var(--space-4);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-  color: var(--accent-soft-text);
+  background: var(--info-soft);
+  color: var(--info-text);
   font-size: var(--text-sm);
 }
 
@@ -1930,7 +1950,7 @@ a.stat-tile:hover {
 }
 
 .assist-btn:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .assist-btn[aria-expanded="true"] {
@@ -2182,10 +2202,13 @@ a.stat-tile:hover {
   }
 }
 
+/* Small labels beside the problem: the body face reads better than the display face at this size. */
 .side-card h2 {
   margin-bottom: var(--space-2);
+  font-family: var(--font-sans);
   font-size: var(--text-sm);
   font-weight: 700;
+  letter-spacing: 0;
 }
 
 .kv {
@@ -2337,7 +2360,7 @@ a.stat-tile:hover {
 }
 
 .step-chip[aria-current="step"] {
-  border-color: var(--accent);
+  border-color: var(--selected-edge);
   background: var(--accent);
   color: var(--on-accent);
 }
@@ -2738,15 +2761,15 @@ details.table-view summary {
 }
 
 .mix-F {
-  background: var(--diff-f);
+  background: var(--diff-f-line);
 }
 
 .mix-C {
-  background: var(--diff-c);
+  background: var(--diff-c-line);
 }
 
 .mix-Ch {
-  background: var(--diff-ch);
+  background: var(--diff-ch-line);
 }
 
 .editor {
@@ -3025,7 +3048,7 @@ details.table-view summary {
 }
 
 .day-chip:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .day-chip:active {
@@ -3033,7 +3056,7 @@ details.table-view summary {
 }
 
 .day-chip:has(input:checked) {
-  border-color: var(--accent);
+  border-color: var(--selected-edge);
   background: var(--accent);
   color: var(--on-accent);
 }
@@ -3314,29 +3337,29 @@ details.table-view summary {
 }
 
 .level-opt:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .level-opt:has(input:checked) {
-  border-color: var(--diff-f);
+  border-color: var(--diff-f-line);
   background: var(--diff-f-soft);
   color: var(--text);
   font-weight: 600;
 }
 
 .level-opt-C:has(input:checked) {
-  border-color: var(--diff-c);
+  border-color: var(--diff-c-line);
   background: var(--diff-c-soft);
 }
 
 .level-opt-Ch:has(input:checked) {
-  border-color: var(--diff-ch);
+  border-color: var(--diff-ch-line);
   background: var(--diff-ch-soft);
 }
 
 .level-opt:has(input:focus-visible),
 .sec-chip:has(input:focus-visible) {
-  outline: 3px solid var(--chart-accent);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -3371,31 +3394,41 @@ details.table-view summary {
 }
 
 .sec-chip:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .sec-chip:has(input:checked) {
-  border-color: var(--accent);
+  border-color: var(--selected-edge);
   background: var(--accent-soft);
   color: var(--accent-soft-text);
 }
 
+/* --lv is the level's ink (icons on its soft background); -solid and -on fill the badge; -line is the border. */
 .plan-section {
   --lv: var(--diff-ch);
   --lv-soft: var(--diff-ch-soft);
+  --lv-solid: var(--diff-ch-solid);
+  --lv-on: var(--on-diff-ch);
+  --lv-line: var(--diff-ch-line);
   padding: 0;
   overflow: hidden;
-  border-color: var(--lv);
+  border-color: var(--lv-line);
 }
 
 .plan-section[data-level="F"] {
   --lv: var(--diff-f);
   --lv-soft: var(--diff-f-soft);
+  --lv-solid: var(--diff-f-solid);
+  --lv-on: var(--on-diff-f);
+  --lv-line: var(--diff-f-line);
 }
 
 .plan-section[data-level="C"] {
   --lv: var(--diff-c);
   --lv-soft: var(--diff-c-soft);
+  --lv-solid: var(--diff-c-solid);
+  --lv-on: var(--on-diff-c);
+  --lv-line: var(--diff-c-line);
 }
 
 .plan-section-head {
@@ -3423,8 +3456,8 @@ details.table-view summary {
   gap: 6px;
   padding: 3px 12px;
   border-radius: var(--radius-pill);
-  background: var(--lv);
-  color: var(--on-diff);
+  background: var(--lv-solid);
+  color: var(--lv-on);
   font-size: var(--text-xs);
   font-weight: 700;
   white-space: nowrap;
@@ -3456,7 +3489,7 @@ details.table-view summary {
 }
 
 .collapse-btn:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .collapse-btn svg {
@@ -3523,12 +3556,12 @@ details.table-view summary {
   width: 20px;
   height: 20px;
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: var(--chart-accent);
   cursor: pointer;
 }
 
 .check-box:has(input:focus-visible) {
-  outline: 3px solid var(--chart-accent);
+  outline: 3px solid var(--focus-ring);
   outline-offset: -3px;
   border-radius: var(--radius-sm);
 }
@@ -3556,7 +3589,7 @@ details.table-view summary {
 }
 
 .check-row[data-returned] {
-  border-color: var(--accent);
+  border-color: var(--selected-edge);
   background: var(--accent-soft);
 }
 
@@ -3595,6 +3628,8 @@ details.table-view summary {
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--border-strong);
+  /* Stygian: a brass edge, so the track reads against the dark sidebar whether it is on or off. */
+  box-shadow: inset 0 0 0 1px var(--switch-edge);
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease);
 }
@@ -3604,7 +3639,7 @@ details.table-view summary {
 }
 
 .switch:focus-visible {
-  outline: 3px solid var(--chart-accent);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -3615,7 +3650,7 @@ details.table-view summary {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--switch-knob);
   transition: transform var(--dur-fast) var(--ease);
 }
 
@@ -3772,4 +3807,68 @@ details.table-view summary {
 
 .coverage-sub {
   margin-top: 0;
+}
+
+/* ============================================================ Stygian: the library atmosphere */
+/*
+ * The Forgotten Library (assets/backgrounds/bg_01) behind the Dashboard header, as CSS layers, so
+ * assistive technology never meets it: the picture on ::before, and on ::after the shade that keeps
+ * every word readable (the header text stays on its darkest part; the shelves show in the empty
+ * space beside it). The Final Exam mirrors the picture, so its moonlit window sits on the right.
+ * Stygian only: none in the light look, with "more contrast", with forced colors or in print.
+ */
+:root:not([data-theme="light"]) .main:has(.atmos) {
+  position: relative;
+  isolation: isolate;
+}
+
+:root:not([data-theme="light"]) .main:has(.atmos)::before,
+:root:not([data-theme="light"]) .main:has(.atmos)::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 300px;
+  pointer-events: none;
+}
+
+:root:not([data-theme="light"]) .main:has(.atmos)::before {
+  background: url("/stygian/bg_01_forgotten_library_main-768.webp") 100% 42% / cover no-repeat;
+  background-image: image-set(url("/stygian/bg_01_forgotten_library_main-768.avif") type("image/avif"), url("/stygian/bg_01_forgotten_library_main-768.webp") type("image/webp"));
+}
+
+:root:not([data-theme="light"]) .main:has(.atmos)::after {
+  background: linear-gradient(180deg, rgb(11 8 11 / 0.84) 0%, rgb(11 8 11 / 0.9) 55%, var(--bg) 100%);
+}
+
+:root:not([data-theme="light"]) .main:has(.atmos-final)::before {
+  transform: scaleX(-1);
+}
+
+@media (min-width: 900px) {
+  :root:not([data-theme="light"]) .main:has(.atmos)::before,
+  :root:not([data-theme="light"]) .main:has(.atmos)::after {
+    height: 380px;
+  }
+
+  :root:not([data-theme="light"]) .main:has(.atmos)::before {
+    background: url("/stygian/bg_01_forgotten_library_main-1536.webp") 50% 42% / cover no-repeat;
+    background-image: image-set(url("/stygian/bg_01_forgotten_library_main-1536.avif") type("image/avif"), url("/stygian/bg_01_forgotten_library_main-1536.webp") type("image/webp"));
+  }
+
+  /* Dark where the header text is (left; a long note reaches about 72% of the width), opening up
+     over the empty space (right), then fading into the page. Checked by measuring the brightest
+     pixel under every word: each stays above 4.5:1. */
+  :root:not([data-theme="light"]) .main:has(.atmos)::after {
+    background:
+      linear-gradient(180deg, transparent 40%, var(--bg) 100%),
+      linear-gradient(90deg, rgb(11 8 11 / 0.95) 0%, rgb(11 8 11 / 0.92) 55%, rgb(11 8 11 / 0.8) 76%, rgb(11 8 11 / 0.52) 100%);
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active), print {
+  :root:not([data-theme="light"]) .main:has(.atmos)::before,
+  :root:not([data-theme="light"]) .main:has(.atmos)::after {
+    display: none;
+  }
 }

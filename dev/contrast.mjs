@@ -1,5 +1,6 @@
 // Checks WCAG contrast for every text/background and UI pair defined in src/styles/tokens.css,
-// in both themes. Run: node dev/contrast.mjs   (exit 1 on any failure)
+// in both themes: "light" (pinned with data-theme="light") and "dark", which is Stygian, the default.
+// Run: node dev/contrast.mjs   (exit 1 on any failure)
 import { readFileSync } from "node:fs";
 
 const css = readFileSync(new URL("../src/styles/tokens.css", import.meta.url), "utf8");
@@ -37,9 +38,13 @@ const pairs = [
   ["diff-f", "diff-f-soft", TEXT],
   ["diff-c", "diff-c-soft", TEXT],
   ["diff-ch", "diff-ch-soft", TEXT],
-  ["on-diff", "diff-f", TEXT],
-  ["on-diff", "diff-c", TEXT],
-  ["on-diff", "diff-ch", TEXT],
+  // The Study Plan's solid level badge, and the level's border and bar-segment color.
+  ["on-diff-f", "diff-f-solid", TEXT],
+  ["on-diff-c", "diff-c-solid", TEXT],
+  ["on-diff-ch", "diff-ch-solid", TEXT],
+  ["diff-f-line", "surface", UI],
+  ["diff-c-line", "surface", UI],
+  ["diff-ch-line", "surface", UI],
   ["diff-f", "surface", TEXT],
   ["diff-c", "surface", TEXT],
   ["diff-ch", "surface", TEXT],
@@ -47,15 +52,38 @@ const pairs = [
   ["border-strong", "bg", UI],
   ["focus-ring", "surface", UI],
   ["focus-ring", "bg", UI],
+  ["focus-ring", "surface-2", UI],
   ["chart-accent", "bg", UI],
-  ["chart-accent", "sunken", UI],
+  // A progress bar's fill on its track; checkboxes and radios use the same color on the surface.
+  ["chart-accent", "track", UI],
   ["success-icon", "surface", UI],
   ["warning-icon", "surface", UI],
   ["danger-icon", "surface", UI],
   ["chart-got", "surface", UI],
   ["chart-accent", "surface", UI],
-  // Active-nav marker drawn on the active item's pill.
-  ["chart-accent", "accent-soft", UI],
+  // The sidebar's current page: its label, and the marker drawn on its filled item.
+  ["nav-active-text", "nav-active-bg", TEXT],
+  ["nav-marker", "nav-active-bg", UI],
+  // The phone tab bar's marker, drawn on the bar.
+  ["nav-marker", "surface", UI],
+  // Hovered rows and buttons.
+  ["text", "surface-hover", TEXT],
+  ["text-2", "surface-hover", TEXT],
+  ["muted", "surface-hover", TEXT],
+  // Selected text, tips, and the ghost button's hover.
+  ["text", "selection", TEXT],
+  ["info-text", "info-soft", TEXT],
+  ["accent-text", "accent-soft", TEXT],
+  // The Dark Mode switch: its knob on the track, on and off.
+  ["switch-knob", "accent", UI],
+  ["switch-knob", "border-strong", UI],
+  // The raised study card's text, the due counts, the countdown, chosen chips, the logo's glyph.
+  ...["text", "text-2", "muted"].map((fg) => [fg, "surface-raised", TEXT]),
+  ["accent-text", "surface-raised", TEXT],
+  ["count-text", "count-bg", TEXT],
+  ["accent-numeral", "surface", TEXT],
+  ["selected-edge", "surface", UI],
+  ["brand-glyph", "accent", UI],
   // Study sessions: "Keep going" pills and step numbers, the timer total, the Paused icon.
   ["text-2", "sunken", TEXT],
   ["text", "sunken", TEXT],

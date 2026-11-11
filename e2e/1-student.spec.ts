@@ -78,14 +78,26 @@ test("review queue, progress and notes reflect the ratings", async ({ page }) =>
   await expect(page.getByLabel("Notes")).toHaveValue("power rule: add one, divide by the new power");
 });
 
-test("theme choice persists and sign-out protects pages", async ({ page }) => {
+test("Stygian is the default look, the light look is a saved choice, and sign-out protects pages", async ({ page }) => {
   await signIn(page, "Ada", "Lovelace");
   await page.goto("/settings");
-  await page.getByRole("radio", { name: /Dark/ }).check();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  const html = page.locator("html");
+  const darkMode = page.locator(".sidebar").getByRole("switch", { name: "Dark Mode" });
+  // No choice made yet: Stygian, with nothing pinned on the page.
+  await expect(html).not.toHaveAttribute("data-theme", /./);
+  await expect(page.getByRole("radio", { name: /^Stygian/ })).toBeChecked();
+  await expect(darkMode).toHaveAttribute("aria-checked", "true");
+  // The light look: the sidebar switch follows Settings, and the choice survives a reload.
+  await page.getByRole("radio", { name: /^Light/ }).check();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await expect(darkMode).toHaveAttribute("aria-checked", "false");
   await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.getByLabel(/System/).check();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await expect(page.getByRole("radio", { name: /^Light/ })).toBeChecked();
+  // Back to Stygian with the sidebar switch; Settings follows it.
+  await darkMode.click();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("radio", { name: /^Stygian/ })).toBeChecked();
 
   await page.getByRole("button", { name: "Sign out" }).first().click();
   await expect(page).toHaveURL(/\/$/);

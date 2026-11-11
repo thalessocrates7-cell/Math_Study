@@ -47,7 +47,7 @@ export function StudyCard({ loaded, progress, firstTime, due }: Props) {
 
   if (card.kind === "done-today" || card.kind === "caught-up") {
     return (
-      <section className="card" aria-labelledby="next-title">
+      <section className="card card-raised" aria-labelledby="next-title">
         <div className="empty">
           <span className="empty-icon" aria-hidden="true">
             <PartyPopper size={26} />
@@ -76,7 +76,7 @@ export function StudyCard({ loaded, progress, firstTime, due }: Props) {
 
   if (card.kind === "review") {
     return (
-      <section className="card" aria-labelledby="next-title">
+      <section className="card card-raised" aria-labelledby="next-title">
         <div className="stack">
           <p className="eyebrow" style={{ margin: 0 }}>
             Recommended next
@@ -106,7 +106,7 @@ export function StudyCard({ loaded, progress, firstTime, due }: Props) {
   const label = easier ? "Try the easier problem" : title;
 
   return (
-    <section className="card" aria-labelledby="next-title">
+    <section className="card card-raised" aria-labelledby="next-title">
       <div className="stack">
         <div className="spread">
           <p className="eyebrow" style={{ margin: 0 }}>
