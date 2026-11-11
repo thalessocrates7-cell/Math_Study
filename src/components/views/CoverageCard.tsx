@@ -1,6 +1,7 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { ProgressBar } from "@/components/Progress";
+import { planHref as chapterHref } from "@/lib/checklist";
 import type { ChapterCoverage, Coverage } from "@/lib/coverage";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -61,19 +62,24 @@ export function CoverageCard({ coverage, planHref }: { coverage: { chapters: Cha
 
       <ul className="list">
         {chapters.map((c) => (
-          <li key={c.sectionId} style={{ padding: "12px 0" }}>
-            <div className="progress-row">
-              <span className="small" style={{ fontWeight: 600 }}>
-                {c.sectionId} {c.title}
+          <li key={c.sectionId}>
+            <Link className="row-link coverage-link" href={chapterHref(c.sectionId, "core", "final")} aria-label={`Open Chapter ${c.chapter} ${c.title} in the Study Plan: ${c.attempted} of ${c.total} attempted`}>
+              <span className="coverage-body">
+                <span className="progress-row">
+                  <span className="small" style={{ fontWeight: 600 }}>
+                    {c.sectionId} {c.title}
+                  </span>
+                  <ProgressBar value={c.attempted} max={c.total} label={`Chapter ${c.chapter} ${c.title}: questions attempted`} />
+                  <span className="small num" style={{ textAlign: "right" }}>
+                    {c.attempted}/{c.total}
+                  </span>
+                </span>
+                <span className="xsmall muted coverage-sub">
+                  {c.inApp === 0 ? "Not in the app yet" : `${c.inApp} of ${c.total} in the app`} · {c.awaitingReview} awaiting review · {c.rechecked} checked again later
+                </span>
               </span>
-              <ProgressBar value={c.attempted} max={c.total} label={`Chapter ${c.chapter} ${c.title}: questions attempted`} />
-              <span className="small num" style={{ textAlign: "right" }}>
-                {c.attempted}/{c.total}
-              </span>
-            </div>
-            <p className="xsmall muted coverage-sub">
-              {c.inApp === 0 ? "Not in the app yet" : `${c.inApp} of ${c.total} in the app`} · {c.awaitingReview} awaiting review · {c.rechecked} checked again later
-            </p>
+              <ChevronRight className="chev" size={18} aria-hidden="true" />
+            </Link>
           </li>
         ))}
       </ul>

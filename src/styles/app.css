@@ -3756,3 +3756,20 @@ details.table-view summary {
   height: auto;
   max-height: 360px;
 }
+
+/* A chapter row in Question Coverage: the whole row opens that chapter in the Study Plan. */
+.coverage-link {
+  padding-block: var(--space-3);
+}
+
+.coverage-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.coverage-sub {
+  margin-top: 0;
+}
